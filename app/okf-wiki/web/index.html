@@ -1,0 +1,3486 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OKF Wiki</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" rel="stylesheet">
+<style>
+/* ===== OKF Wiki — Main Stylesheet ===== */
+
+/* --- Reset & Base --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --bg-tertiary: #e5e7eb;
+  --bg-hover: #e5e7eb;
+  --bg-active: #d1d5db;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --border-color: #e5e7eb;
+  --border-light: #f3f4f6;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-light: #eff6ff;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #0891b2;
+  --sidebar-width: 260px;
+  --topbar-height: 48px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-hover: #334155;
+  --bg-active: #475569;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  --border-color: #334155;
+  --border-light: #1e293b;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-light: #1e3a5f;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #22d3ee;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Top Bar --- */
+#topbar {
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  gap: 8px;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.topbar-left, .topbar-right { display: flex; align-items: center; gap: 2px; }
+.topbar-center { flex: 1; max-width: 420px; margin: 0 auto; }
+
+.bundle-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 0 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 80px;
+}
+
+.breadcrumb {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 1px solid var(--border-color);
+  margin-left: 4px;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.12s ease, color 0.12s ease;
+  flex-shrink: 0;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.icon-btn.active { background: var(--accent-light); color: var(--accent); }
+.icon-btn.btn-primary { color: var(--accent); }
+.icon-btn.btn-primary:hover { background: var(--accent-light); }
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: transparent;
+}
+.icon-btn.btn-primary:disabled { color: var(--text-muted); }
+.icon-btn.btn-primary:not(:disabled).active {
+  color: var(--success);
+}
+
+/* --- Search Box --- */
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0 10px;
+  height: 32px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.search-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+.search-box > i { color: var(--text-muted); font-size: 14px; margin-right: 6px; flex-shrink: 0; }
+.search-box input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 0;
+}
+.search-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 200;
+}
+.search-result-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: var(--bg-hover); }
+.search-result-item .sr-title { font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.search-result-item .sr-path { color: var(--text-muted); font-size: 11px; font-family: var(--font-mono); }
+.search-result-item .sr-type { font-size: 10px; color: var(--accent); background: var(--accent-light); padding: 1px 6px; border-radius: 10px; }
+
+/* --- Main Layout --- */
+#main-layout {
+  display: flex;
+  height: calc(100vh - var(--topbar-height));
+  overflow: hidden;
+}
+
+/* --- Sidebars --- */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.2s ease, min-width 0.2s ease;
+}
+.sidebar-right {
+  border-right: none;
+  border-left: 1px solid var(--border-color);
+}
+
+.sidebar-header {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  user-select: none;
+}
+.sidebar-header i { font-size: 14px; }
+
+/* --- Explorer Tree --- */
+.tree-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.tree-item {
+  display: flex;
+  align-items: center;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  gap: 4px;
+  user-select: none;
+  transition: background 0.1s ease;
+  border-left: 2px solid transparent;
+}
+.tree-item:hover { background: var(--bg-hover); }
+.tree-item.active {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 500;
+  border-left-color: var(--accent);
+}
+.tree-item .tree-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+.tree-item .tree-icon.dir { color: var(--warning); }
+.tree-item .tree-icon.md { color: var(--text-muted); }
+.tree-item .tree-icon.active { color: var(--accent); }
+.tree-item .tree-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-item .tree-chevron { font-size: 10px; color: var(--text-muted); width: 14px; text-align: center; flex-shrink: 0; transition: transform 0.15s ease; }
+.tree-item .tree-chevron.open { transform: rotate(90deg); }
+.tree-children { display: none; }
+.tree-children.open { display: block; }
+.tree-children .tree-item { padding-left: 28px; }
+.tree-children .tree-children .tree-item { padding-left: 44px; }
+.tree-children .tree-children .tree-children .tree-item { padding-left: 60px; }
+.tree-children .tree-children .tree-children .tree-children .tree-item { padding-left: 76px; }
+
+/* --- Editor Area --- */
+#editor-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-primary);
+  min-width: 0;
+}
+
+.welcome-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.welcome-content {
+  text-align: center;
+  max-width: 520px;
+}
+.welcome-icon { font-size: 56px; color: var(--accent); margin-bottom: 16px; opacity: 0.8; }
+.welcome-content h1 { font-size: 26px; margin-bottom: 8px; font-weight: 700; }
+.welcome-content p { color: var(--text-secondary); margin-bottom: 24px; font-size: 14px; }
+.welcome-actions { display: flex; gap: 10px; justify-content: center; margin-bottom: 32px; }
+.welcome-shortcuts { text-align: left; background: var(--bg-secondary); border-radius: var(--radius-md); padding: 16px 20px; border: 1px solid var(--border-color); }
+.welcome-shortcuts h3 { font-size: 12px; margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.welcome-shortcuts table { width: 100%; font-size: 13px; }
+.welcome-shortcuts td:first-child { padding-right: 16px; text-align: right; }
+.welcome-shortcuts kbd {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.editor-container { flex: 1; display: flex; overflow: hidden; }
+.editor-pane { flex: 1; overflow: auto; }
+.preview-pane { max-width: 800px; margin: 0 auto; padding: 32px 40px; }
+.source-pane { padding: 0; }
+#raw-editor {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.7;
+  padding: 32px 40px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  tab-size: 2;
+}
+
+/* --- Markdown Preview --- */
+.preview-pane h1 { font-size: 1.8em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; margin: 1.2em 0 0.6em; font-weight: 700; }
+.preview-pane h2 { font-size: 1.4em; border-bottom: 1px solid var(--border-light); padding-bottom: 0.25em; margin: 1em 0 0.5em; font-weight: 600; }
+.preview-pane h3 { font-size: 1.15em; margin: 0.8em 0 0.4em; font-weight: 600; }
+.preview-pane h4 { font-size: 1em; margin: 0.6em 0 0.3em; font-weight: 600; }
+.preview-pane p { margin: 0.8em 0; line-height: 1.7; }
+.preview-pane a { color: var(--accent); text-decoration: none; }
+.preview-pane a:hover { text-decoration: underline; }
+.preview-pane code {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  color: var(--text-primary);
+}
+.preview-pane pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+.preview-pane pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; }
+.preview-pane blockquote {
+  border-left: 4px solid var(--accent);
+  padding: 8px 16px;
+  margin: 1em 0;
+  background: var(--bg-secondary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-secondary);
+}
+.preview-pane ul, .preview-pane ol { padding-left: 24px; margin: 0.6em 0; }
+.preview-pane li { margin: 0.3em 0; line-height: 1.6; }
+.preview-pane img { max-width: 100%; border-radius: var(--radius-md); }
+.preview-pane table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+.preview-pane th, .preview-pane td { border: 1px solid var(--border-color); padding: 8px 12px; text-align: left; }
+.preview-pane th { background: var(--bg-secondary); font-weight: 600; }
+.preview-pane hr { border: none; border-top: 1px solid var(--border-color); margin: 2em 0; }
+
+/* Callouts */
+.callout {
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin: 1em 0;
+  border-left: 4px solid;
+}
+.callout-note { background: #dbeafe; border-color: #3b82f6; }
+.callout-tip { background: #d1fae5; border-color: #10b981; }
+.callout-warning { background: #fef3c7; border-color: #f59e0b; }
+.callout-caution { background: #fee2e2; border-color: #ef4444; }
+.callout-important { background: #ede9fe; border-color: #8b5cf6; }
+[data-theme="dark"] .callout-note { background: #1e3a5f; }
+[data-theme="dark"] .callout-tip { background: #064e3b; }
+[data-theme="dark"] .callout-warning { background: #451a03; }
+[data-theme="dark"] .callout-caution { background: #450a0a; }
+[data-theme="dark"] .callout-important { background: #2e1065; }
+
+/* Trust badges in preview */
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+.trust-badge.unverified { background: var(--bg-tertiary); color: var(--text-muted); }
+.trust-badge.machine-confirmed { background: var(--accent-light); color: var(--accent); }
+.trust-badge.human-reviewed { background: #d1fae5; color: #065f46; }
+[data-theme="dark"] .trust-badge.human-reviewed { background: #064e3b; color: #6ee7b7; }
+
+/* --- Properties Panel --- */
+.properties-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+.prop-group { margin-bottom: 12px; }
+.prop-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.prop-group select,
+.prop-group input[type="text"],
+.prop-group input[type="url"],
+.prop-group input[type="date"],
+.prop-group textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.prop-group select:focus,
+.prop-group input:focus,
+.prop-group textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+.prop-group textarea.mono { font-family: var(--font-mono); font-size: 12px; }
+.prop-group-expanded textarea { min-height: 100px; }
+
+/* Tag Picker */
+.tag-picker { display: flex; flex-direction: column; gap: 4px; }
+#tag-input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+}
+.tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--accent-light);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.tag-chip .tag-remove {
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.6;
+  margin-left: 1px;
+}
+.tag-chip .tag-remove:hover { opacity: 1; }
+
+/* --- Backlinks --- */
+.backlinks-content { flex: 1; overflow-y: auto; padding: 12px; }
+.backlink-item {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: background 0.1s ease;
+  border: 1px solid transparent;
+}
+.backlink-item:hover { background: var(--bg-hover); border-color: var(--border-color); }
+.backlink-item .bl-source { font-size: 12px; color: var(--accent); font-weight: 500; display: flex; align-items: center; gap: 4px; }
+.backlink-item .bl-snippet { font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
+
+/* --- Graph View --- */
+.graph-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+#graph-canvas { width: 100%; height: 100%; }
+#graph-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+}
+.graph-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-sm);
+}
+.legend-item { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* --- Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-sans);
+  white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border-color); }
+.btn-secondary:hover { background: var(--bg-hover); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { opacity: 0.9; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* --- Modals --- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(2px);
+}
+.modal-dialog {
+  position: relative;
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.2s ease;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.modal-sm { max-width: 400px; }
+.modal-md { max-width: 600px; }
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+.modal-header h2 { font-size: 16px; display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.modal-close {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.1s, color 0.1s;
+}
+.modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+.modal-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
+.modal-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* --- Forms --- */
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+}
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+/* --- Bundles List --- */
+.bundles-list { display: flex; flex-direction: column; gap: 8px; }
+.bundle-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.bundle-card:hover { border-color: var(--accent); background: var(--bg-hover); box-shadow: var(--shadow-sm); }
+.bundle-card .bc-icon { font-size: 22px; color: var(--accent); }
+.bundle-card .bc-info { flex: 1; }
+.bundle-card .bc-name { font-weight: 600; font-size: 14px; }
+.bundle-card .bc-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.bundle-card .bc-actions { display: flex; gap: 4px; }
+.bundle-card .bc-delete {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.1s, background 0.1s;
+}
+.bundle-card .bc-delete:hover { color: var(--danger); background: #fee2e2; }
+[data-theme="dark"] .bundle-card .bc-delete:hover { background: #450a0a; }
+
+/* --- Validation Results --- */
+.validation-summary {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+.vs-item { text-align: center; flex: 1; }
+.vs-item .vs-count { font-size: 24px; font-weight: 700; }
+.vs-item .vs-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.vs-errors .vs-count { color: var(--danger); }
+.vs-warnings .vs-count { color: var(--warning); }
+.vs-info .vs-count { color: var(--info); }
+
+.validation-details { max-height: 300px; overflow-y: auto; }
+.vd-item {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 4px;
+  font-size: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  border: 1px solid;
+}
+.vd-error { background: #fee2e2; color: var(--danger); border-color: #fecaca; }
+.vd-warning { background: #fef3c7; color: var(--warning); border-color: #fde68a; }
+.vd-info { background: #dbeafe; color: var(--info); border-color: #bfdbfe; }
+[data-theme="dark"] .vd-error { background: #450a0a; border-color: #7f1d1d; }
+[data-theme="dark"] .vd-warning { background: #451a03; border-color: #78350f; }
+[data-theme="dark"] .vd-info { background: #1e3a5f; border-color: #1e40af; }
+.vd-item .vd-path { font-weight: 600; font-family: var(--font-mono); flex-shrink: 0; }
+
+/* --- Commands --- */
+.command-input-wrapper { padding: 12px 16px; border-bottom: 1px solid var(--border-light); }
+#command-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+  color: var(--text-primary);
+}
+.command-results { max-height: 300px; overflow-y: auto; }
+.command-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s ease;
+}
+.command-item:hover, .command-item.selected { background: var(--bg-hover); }
+.command-item .ci-icon { font-size: 16px; color: var(--text-muted); width: 20px; text-align: center; flex-shrink: 0; }
+.command-item .ci-label { flex: 1; }
+.command-item .ci-key { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+
+/* --- Toast --- */
+.toast-container {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: toastIn 0.2s ease-out;
+  max-width: 320px;
+}
+.toast-success { border-left: 4px solid var(--success); }
+.toast-error { border-left: 4px solid var(--danger); }
+.toast-warning { border-left: 4px solid var(--warning); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- Hidden utility --- */
+.hidden { display: none !important; }
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+* { scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .sidebar { width: 200px; min-width: 200px; }
+  .topbar-center { display: none; }
+  .welcome-actions { flex-direction: column; }
+  .preview-pane { padding: 20px; }
+  #raw-editor { padding: 20px; }
+}
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.1/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+<script src="/api/custom-apps/sdk.js"></script>
+</head>
+<body>
+<header id="topbar">
+  <div class="topbar-left">
+    <button id="btn-bundles" class="icon-btn" title="Collections"><i class="bi bi-collection"></i></button>
+    <span id="bundle-name" class="bundle-label">No collection selected</span>
+    <span id="breadcrumb" class="breadcrumb"></span>
+  </div>
+  <div class="topbar-center">
+    <div id="search-box" class="search-box">
+      <i class="bi bi-search"></i>
+      <input type="text" id="search-input" placeholder="Search concepts (Ctrl+O)..." autocomplete="off">
+      <div id="search-results" class="search-results hidden"></div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button id="btn-new-file" class="icon-btn" title="New File (Ctrl+N)"><i class="bi bi-plus-lg"></i></button>
+    <button id="btn-source-toggle" class="icon-btn" title="Toggle Source (⌘⌥E)"><i class="bi bi-code-slash"></i></button>
+    <button id="btn-save" class="icon-btn btn-primary" title="Save (Ctrl+S)" disabled><i class="bi bi-check2"></i></button>
+    <button id="btn-properties" class="icon-btn" title="Properties Panel"><i class="bi bi-sliders"></i></button>
+    <button id="btn-backlinks" class="icon-btn" title="Backlinks"><i class="bi bi-link-45deg"></i></button>
+    <button id="btn-graph" class="icon-btn" title="Graph View"><i class="bi bi-diagram-3"></i></button>
+    <button id="btn-validate" class="icon-btn" title="Validate OKF Conformance"><i class="bi bi-shield-check"></i></button>
+    <button id="btn-theme" class="icon-btn" title="Toggle Theme"><i class="bi bi-moon-stars"></i></button>
+  </div>
+</header>
+
+<div id="main-layout">
+  <aside id="sidebar-explorer" class="sidebar sidebar-left">
+    <div class="sidebar-header"><span><i class="bi bi-folder2-open"></i> Explorer</span></div>
+    <div id="explorer-tree" class="tree-container"></div>
+  </aside>
+
+  <main id="editor-area">
+    <div id="welcome-screen" class="welcome-screen">
+      <div class="welcome-content">
+        <i class="bi bi-journal-text welcome-icon"></i>
+        <h1>OKF Wiki</h1>
+        <p>Open Knowledge Format — agent-ready knowledge base</p>
+        <div class="welcome-actions">
+          <button id="btn-open-collections" class="btn btn-primary"><i class="bi bi-collection"></i> Browse Collections</button>
+        </div>
+        <div style="margin-top:16px;padding:12px;background:var(--bg-tertiary);border-radius:var(--radius-md);font-size:12px;color:var(--text-secondary);">
+          <i class="bi bi-info-circle" style="color:var(--accent);"></i>
+          Collections are subdirectories under <code>/home/omnideck/wiki/</code>. Each subdirectory is an OKF bundle with its own <code>index.md</code>.
+        </div>
+        <div class="welcome-shortcuts" style="margin-top:24px;">
+          <h3>Keyboard Shortcuts</h3>
+          <table>
+            <tr><td><kbd>Ctrl+O</kbd></td><td>Quick Open / Search</td></tr>
+            <tr><td><kbd>Ctrl+N</kbd></td><td>New File</td></tr>
+            <tr><td><kbd>Ctrl+S</kbd></td><td>Save</td></tr>
+            <tr><td><kbd>⌘⌥E</kbd></td><td>Toggle Source / Preview</td></tr>
+            <tr><td><kbd>Ctrl+B</kbd></td><td>Toggle Explorer</td></tr>
+            <tr><td><kbd>Ctrl+P</kbd></td><td>Command Palette</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="editor-container" class="editor-container hidden">
+      <div id="live-preview" class="editor-pane preview-pane"></div>
+      <div id="source-editor" class="editor-pane source-pane hidden">
+        <textarea id="raw-editor" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <div id="graph-container" class="graph-container hidden">
+      <canvas id="graph-canvas"></canvas>
+      <div id="graph-controls">
+        <button id="btn-graph-reset" class="btn btn-sm"><i class="bi bi-arrows-fullscreen"></i> Reset</button>
+        <button id="btn-graph-filter" class="btn btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+      </div>
+      <div id="graph-legend" class="graph-legend"></div>
+    </div>
+  </main>
+
+  <aside id="sidebar-properties" class="sidebar sidebar-right hidden">
+    <div class="sidebar-header"><span><i class="bi bi-sliders"></i> Properties</span></div>
+    <div id="properties-content" class="properties-content">
+      <div class="prop-group">
+        <label>Type</label>
+        <select id="prop-type">
+          <option value="">Select type...</option>
+          <option value="Concept">Concept</option>
+          <option value="Reference">Reference</option>
+          <option value="How-to">How-to</option>
+          <option value="Decision">Decision</option>
+          <option value="Metric">Metric</option>
+          <option value="Playbook">Playbook</option>
+          <option value="Glossary">Glossary</option>
+          <option value="Daily Note">Daily Note</option>
+          <option value="Template">Template</option>
+          <option value="Directory">Directory</option>
+          <option value="Log">Log</option>
+        </select>
+      </div>
+      <div class="prop-group">
+        <label>Title</label>
+        <input type="text" id="prop-title" placeholder="Concept title...">
+      </div>
+      <div class="prop-group">
+        <label>Description</label>
+        <textarea id="prop-description" rows="2" placeholder="Brief description..."></textarea>
+      </div>
+      <div class="prop-group">
+        <label>Tags</label>
+        <div id="tag-picker" class="tag-picker">
+          <input type="text" id="tag-input" placeholder="Add tag...">
+          <div id="tag-list" class="tag-list"></div>
+        </div>
+      </div>
+      <div class="prop-group">
+        <label>Status</label>
+        <select id="prop-status">
+          <option value="">(none)</option>
+          <option value="draft">Draft</option>
+          <option value="stable">Stable</option>
+          <option value="deprecated">Deprecated</option>
+        </select>
+      </div>
+      <div class="prop-group">
+        <label>Stale After</label>
+        <input type="date" id="prop-stale-after">
+      </div>
+      <div class="prop-group">
+        <label>Resource URL</label>
+        <input type="url" id="prop-resource" placeholder="https://...">
+      </div>
+      <div class="prop-group prop-group-expanded">
+        <label>Raw Frontmatter</label>
+        <textarea id="prop-raw-yaml" rows="8" spellcheck="false" class="mono"></textarea>
+      </div>
+    </div>
+  </aside>
+
+  <aside id="sidebar-backlinks" class="sidebar sidebar-right hidden">
+    <div class="sidebar-header"><span><i class="bi bi-link-45deg"></i> Backlinks</span></div>
+    <div id="backlinks-content" class="backlinks-content">
+      <div id="backlinks-list" class="backlinks-list"></div>
+    </div>
+  </aside>
+</div>
+
+<div id="modal-bundles" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h2><i class="bi bi-collection"></i> Collections</h2>
+      <button class="modal-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="bundles-list" class="bundles-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-new-file" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-dialog modal-sm">
+    <div class="modal-header">
+      <h2><i class="bi bi-file-earmark-plus"></i> New Concept</h2>
+      <button class="modal-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="new-file-name" placeholder="concept-name.md">
+      </div>
+      <div class="form-group">
+        <label>Folder</label>
+        <select id="new-file-folder"></select>
+      </div>
+      <div class="form-group" id="template-selector-group" style="display:none;">
+        <label>Template</label>
+        <select id="new-file-template"></select>
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="new-file-type">
+          <option value="Concept">Concept</option>
+          <option value="Reference">Reference</option>
+          <option value="How-to">How-to</option>
+          <option value="Decision">Decision</option>
+          <option value="Metric">Metric</option>
+          <option value="Playbook">Playbook</option>
+          <option value="Glossary">Glossary</option>
+          <option value="Daily Note">Daily Note</option>
+          <option value="Template">Template</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-cancel-new" class="btn btn-secondary">Cancel</button>
+      <button id="btn-create-new" class="btn btn-primary">Create</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-command-palette" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-dialog modal-md">
+    <div class="modal-body" style="padding:0;">
+      <input type="text" id="command-input" placeholder="Type a command..." autofocus>
+      <div id="command-results" class="command-results"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-validation" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-dialog modal-md">
+    <div class="modal-header">
+      <h2><i class="bi bi-shield-check"></i> OKF Validation</h2>
+      <button class="modal-close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="validation-summary" class="validation-summary"></div>
+      <div id="validation-details" class="validation-details"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script>
+/**
+ * OKF Wiki — Application State
+ * Centralized state management for the wiki application.
+ */
+
+const AppState = {
+  // Current bundle (vault)
+  currentBundle: null,
+
+  // Currently open concept path (relative to bundle root)
+  currentConcept: null,
+
+  // Concept data cache
+  conceptCache: {},
+
+  // Editor mode: 'preview' | 'source'
+  editorMode: 'preview',
+
+  // Sidebar visibility
+  showExplorer: true,
+  showProperties: false,
+  showBacklinks: false,
+  showGraph: false,
+
+  // Theme
+  theme: localStorage.getItem('okf-theme') || 'light',
+
+  // Explorer tree expansion state
+  expandedDirs: new Set(),
+
+  // Autosave timer
+  _autosaveTimer: null,
+  _dirty: false,
+
+  // Graph state
+  graphNodes: [],
+  graphEdges: [],
+
+  // Tag suggestions from search
+  tagSuggestions: [],
+
+  // Initialize
+  init() {
+    document.documentElement.setAttribute('data-theme', this.theme);
+  },
+
+  // Theme toggle
+  toggleTheme() {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', this.theme);
+    localStorage.setItem('okf-theme', this.theme);
+  },
+
+  // Dirty flag + autosave
+  markDirty() {
+    this._dirty = true;
+    clearTimeout(this._autosaveTimer);
+    this._autosaveTimer = setTimeout(() => {
+      if (this._dirty && window.Editor) {
+        window.Editor.saveCurrent().then(() => {
+          this._dirty = false;
+        });
+      }
+    }, 3000);
+  },
+
+  // Check if current concept has unsaved changes
+  isDirty() { return this._dirty; },
+
+  // Cache a concept
+  cacheConcept(bundle, path, data) {
+    const key = `${bundle}:${path}`;
+    this.conceptCache[key] = data;
+  },
+
+  // Get cached concept
+  getCachedConcept(bundle, path) {
+    return this.conceptCache[`${bundle}:${path}`];
+  },
+
+  // Clear cache for a bundle
+  clearBundleCache(bundle) {
+    Object.keys(this.conceptCache).forEach(key => {
+      if (key.startsWith(`${bundle}:`)) delete this.conceptCache[key];
+    });
+  },
+
+  // Expand/collapse directory in explorer
+  toggleDir(dirPath) {
+    if (this.expandedDirs.has(dirPath)) {
+      this.expandedDirs.delete(dirPath);
+    } else {
+      this.expandedDirs.add(dirPath);
+    }
+  },
+
+  isDirExpanded(dirPath) {
+    return this.expandedDirs.has(dirPath);
+  },
+
+  // Navigation helpers
+  setBundle(bundleId) {
+    this.currentBundle = bundleId;
+    this.currentConcept = null;
+    this.clearBundleCache(bundleId);
+    this.showGraph = false;
+  },
+
+  openConcept(path) {
+    this.currentConcept = path;
+    this.showGraph = false;
+  },
+
+  closeConcept() {
+    this.currentConcept = null;
+  },
+
+  // Toggle sidebar panels
+  togglePanel(panelName) {
+    const panels = {
+      properties: 'showProperties',
+      backlinks: 'showBacklinks',
+      graph: 'showGraph',
+    };
+    const prop = panels[panelName];
+    if (prop) {
+      this[prop] = !this[prop];
+      // Close others when opening one
+      if (this[prop]) {
+        if (panelName !== 'properties') this.showProperties = false;
+        if (panelName !== 'backlinks') this.showBacklinks = false;
+        if (panelName !== 'graph') this.showGraph = false;
+      }
+    }
+  },
+
+  // Breadcrumb from path
+  getBreadcrumb(path) {
+    if (!path) return '';
+    const parts = path.split('/');
+    return parts.slice(0, -1).join(' / ') || '/';
+  },
+
+  // Type icon mapping
+  getTypeIcon(type) {
+    const icons = {
+      'Concept': 'bi-circle-fill',
+      'Reference': 'bi-book',
+      'How-to': 'bi-tools',
+      'Decision': 'bi-check-circle',
+      'Metric': 'bi-graph-up',
+      'Playbook': 'bi-journal-bookmark',
+      'Glossary': 'bi-list-ol',
+      'Daily Note': 'bi-calendar-event',
+      'Template': 'bi-file-earmark-plus',
+      'Directory': 'bi-folder2-open',
+      'Log': 'bi-clock-history',
+    };
+    return icons[type] || 'bi-file-earmark-text';
+  },
+
+  // Trust tier color
+  getTrustColor(tier) {
+    const colors = {
+      'unverified': '#8b95a5',
+      'machine-confirmed': '#4c6ef5',
+      'human-reviewed': '#2f9e44',
+    };
+    return colors[tier] || '#8b95a5';
+  },
+};
+
+/**
+ * OKF Wiki — API Module
+ * Wralls all backend action calls via window.omnideck.invoke().
+ */
+
+const API = {
+  async call(action, params = {}) {
+    try {
+      const result = await window.omnideck.invoke(action, params);
+      if (result && result.error) {
+        throw new Error(result.error);
+      }
+      return result;
+    } catch (err) {
+      console.error(`API call failed: ${action}`, err);
+      Toast.show(err.message || `Failed to call ${action}`, 'error');
+      throw err;
+    }
+  },
+
+  // Bundle operations
+  async listBundles() {
+    return this.call('list_bundles');
+  },
+
+  async createBundle(name) {
+    return this.call('create_bundle', { name });
+  },
+
+  async deleteBundle(name) {
+    return this.call('delete_bundle', { name });
+  },
+
+  // Concept operations
+  async getConcept(bundle, path) {
+    return this.call('get_concept', { bundle, path });
+  },
+
+  async saveConcept(bundle, path, frontmatter, body, raw) {
+    return this.call('save_concept', { bundle, path, frontmatter, body, raw });
+  },
+
+  async deleteConcept(bundle, path) {
+    return this.call('delete_concept', { bundle, path });
+  },
+
+  async createConcept(bundle, path, frontmatter, body, template) {
+    return this.call('create_concept', { bundle, path, frontmatter, body, template });
+  },
+
+  // File explorer
+  async listDirectory(bundle, path) {
+    return this.call('list_directory', { bundle, path });
+  },
+
+  // Backlinks
+  async findBacklinks(bundle, targetPath) {
+    return this.call('find_backlinks', { bundle, target_path: targetPath });
+  },
+
+  // Search
+  async searchConcepts(bundle, query, scope = 'all') {
+    return this.call('search_concepts', { bundle, query, scope });
+  },
+
+  // Tags
+  async collectTags(bundle) {
+    return this.call('collect_tags', { bundle });
+  },
+
+  // Graph data
+  async getGraphData(bundle) {
+    return this.call('get_graph_data', { bundle });
+  },
+
+  // Validation
+  async validateConcept(bundle, path) {
+    return this.call('validate_concept', { bundle, path });
+  },
+
+  async validateBundle(bundle) {
+    return this.call('validate_bundle', { bundle });
+  },
+
+  // Templates
+  async listTemplates(bundle, path) {
+    return this.call('list_templates', { bundle, path });
+  },
+
+  // Import/Export
+  async exportBundle(bundle) {
+    return this.call('export_bundle', { bundle });
+  },
+
+  async importBundle(data) {
+    return this.call('import_bundle', { data });
+  },
+};
+
+/**
+ * OKF Wiki — Explorer Module
+ * File tree navigation with expand/collapse, type icons, trust indicators.
+ */
+
+const Explorer = {
+  async init() {
+    document.getElementById('btn-bundles').addEventListener('click', () => Modals.showBundles());
+    
+    // Auto-discover and select first bundle
+    await this.autoSelectBundle();
+  },
+
+  async autoSelectBundle() {
+    try {
+      const bundles = await API.listBundles();
+      if (bundles.length === 0) {
+        // No bundles yet — show welcome screen
+        return;
+      }
+      
+      // If only one bundle, auto-select it
+      if (bundles.length === 1) {
+        AppState.setBundle(bundles[0].id);
+        document.getElementById('bundle-name').textContent = bundles[0].id;
+        await this.refresh();
+        return;
+      }
+      
+      // Multiple bundles — show bundle picker
+      Modals.showBundles();
+    } catch (err) {
+      console.error('Failed to auto-select bundle:', err);
+    }
+  },
+
+  async renderTree() {
+    if (!AppState.currentBundle) {
+      document.getElementById('explorer-tree').innerHTML = `
+        <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">
+          <i class="bi bi-collection" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+          Select a bundle to begin
+        </div>`;
+      return;
+    }
+    await this.loadDirectory('', true);
+  },
+
+  async loadDirectory(dirPath, isRoot = false) {
+    const result = await API.listDirectory(AppState.currentBundle, dirPath);
+    if (result.error) {
+      Toast.show(result.error, 'error');
+      return;
+    }
+
+    const container = document.getElementById('explorer-tree');
+    if (isRoot) container.innerHTML = '';
+
+    // Render directories
+    for (const dir of result.directories) {
+      const fullDir = dirPath ? `${dirPath}/${dir}` : dir;
+      const expanded = AppState.isDirExpanded(fullDir);
+      const item = this.createDirItem(dir, fullDir, expanded);
+      if (isRoot) container.appendChild(item);
+      else container.appendChild(item);
+
+      if (expanded) {
+        const childContainer = document.createElement('div');
+        childContainer.className = 'tree-children open';
+        childContainer.dataset.dir = fullDir;
+        // Lazy load children
+        await this.loadChildren(childContainer, fullDir);
+        if (isRoot) container.appendChild(childContainer);
+        else container.appendChild(childContainer);
+      }
+    }
+
+    // Render files
+    for (const file of result.files) {
+      const filePath = dirPath ? `${dirPath}/${file.name}` : file.name;
+      const item = this.createFileItem(file, filePath);
+      if (isRoot) container.appendChild(item);
+      else container.appendChild(item);
+    }
+  },
+
+  async loadChildren(container, dirPath) {
+    const result = await API.listDirectory(AppState.currentBundle, dirPath);
+    if (result.error) return;
+
+    for (const dir of result.directories) {
+      const fullDir = dirPath ? `${dirPath}/${dir}` : dir;
+      const expanded = AppState.isDirExpanded(fullDir);
+      const item = this.createDirItem(dir, fullDir, expanded);
+      container.appendChild(item);
+
+      if (expanded) {
+        const childContainer = document.createElement('div');
+        childContainer.className = 'tree-children open';
+        childContainer.dataset.dir = fullDir;
+        await this.loadChildren(childContainer, fullDir);
+        container.appendChild(childContainer);
+      }
+    }
+
+    for (const file of result.files) {
+      const filePath = dirPath ? `${dirPath}/${file.name}` : file.name;
+      container.appendChild(this.createFileItem(file, filePath));
+    }
+  },
+
+  createDirItem(name, fullPath, expanded) {
+    const item = document.createElement('div');
+    item.className = 'tree-item';
+    item.dataset.path = fullPath;
+
+    const chevron = document.createElement('span');
+    chevron.className = `tree-chevron ${expanded ? 'open' : ''}`;
+    chevron.innerHTML = '<i class="bi bi-chevron-right"></i>';
+
+    const icon = document.createElement('span');
+    icon.className = 'tree-icon dir';
+    icon.innerHTML = expanded ? '<i class="bi bi-folder-fill"></i>' : '<i class="bi bi-folder"></i>';
+
+    const label = document.createElement('span');
+    label.className = 'tree-name';
+    label.textContent = name;
+
+    item.appendChild(chevron);
+    item.appendChild(icon);
+    item.appendChild(label);
+
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      AppState.toggleDir(fullPath);
+
+      // Update chevron and icon
+      const chev = item.querySelector('.tree-chevron');
+      const icn = item.querySelector('.tree-icon');
+      if (AppState.isDirExpanded(fullPath)) {
+        chev.classList.add('open');
+        icn.innerHTML = '<i class="bi bi-folder-fill"></i>';
+
+        // Show/create children container
+        let childContainer = item.parentElement?.querySelector(`.tree-children[data-dir="${fullPath}"]`);
+        if (!childContainer) {
+          childContainer = document.createElement('div');
+          childContainer.className = 'tree-children open';
+          childContainer.dataset.dir = fullPath;
+          item.after(childContainer);
+          this.loadChildren(childContainer, fullPath);
+        } else {
+          childContainer.classList.add('open');
+        }
+      } else {
+        chev.classList.remove('open');
+        icn.innerHTML = '<i class="bi bi-folder"></i>';
+        const childContainer = item.parentElement?.querySelector(`.tree-children[data-dir="${fullPath}"]`);
+        if (childContainer) childContainer.classList.remove('open');
+      }
+    });
+
+    // Right-click menu for new file in directory
+    item.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      window.State._newFileInDir = fullPath;
+      Modals.showNewFile();
+    });
+
+    return item;
+  },
+
+  createFileItem(fileData, filePath) {
+    const item = document.createElement('div');
+    item.className = 'tree-item';
+    item.dataset.path = filePath;
+
+    const icon = document.createElement('span');
+    icon.className = 'tree-icon md';
+    const typeIcon = AppState.getTypeIcon(fileData.type);
+    icon.innerHTML = `<i class="bi ${typeIcon}"></i>`;
+
+    const label = document.createElement('span');
+    label.className = 'tree-name';
+    label.textContent = fileData.title || fileData.name.replace('.md', '');
+    label.title = filePath;
+
+    item.appendChild(icon);
+    item.appendChild(label);
+
+    // Click to open
+    item.addEventListener('click', () => {
+      // Remove active from all
+      document.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
+      item.classList.add('active');
+      Editor.openConcept(filePath);
+    });
+
+    // Right-click for context menu
+    item.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      window.State._contextPath = filePath;
+      this.showContextMenu(e, fileData, filePath);
+    });
+
+    return item;
+  },
+
+  showContextMenu(event, fileData, filePath) {
+    // Simple context menu using existing modals
+    const actions = [
+      { label: 'Rename', icon: 'bi-pencil', action: () => this.renameFile(filePath) },
+      { label: 'Delete', icon: 'bi-trash', action: () => this.deleteFileConfirm(filePath) },
+      { label: 'Validate', icon: 'bi-shield-check', action: () => Modals.showValidation(filePath) },
+    ];
+
+    // Create floating menu
+    const menu = document.createElement('div');
+    menu.style.cssText = `
+      position:fixed; left:${event.clientX}px; top:${event.clientY}px;
+      background:var(--bg-primary); border:1px solid var(--border-color);
+      border-radius:var(--radius-md); box-shadow:var(--shadow-md);
+      z-index:500; min-width:160px; overflow:hidden;
+    `;
+
+    actions.forEach(a => {
+      const btn = document.createElement('button');
+      btn.style.cssText = `
+        display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px;
+        border:none; background:transparent; text-align:left; cursor:pointer;
+        font-size:13px; color:var(--text-primary);
+      `;
+      btn.innerHTML = `<i class="bi ${a.icon}" style="width:16px;text-align:center;color:var(--text-muted);"></i>${a.label}`;
+      btn.addEventListener('click', () => {
+        a.action();
+        menu.remove();
+      });
+      menu.appendChild(btn);
+    });
+
+    document.body.appendChild(menu);
+
+    const closeMenu = () => { menu.remove(); document.removeEventListener('click', closeMenu); };
+    setTimeout(() => document.addEventListener('click', closeMenu), 10);
+  },
+
+  async renameFile(oldPath) {
+    const newName = prompt('New filename:', oldPath);
+    if (!newName || newName === oldPath) return;
+
+    try {
+      const data = await API.getConcept(AppState.currentBundle, oldPath);
+      if (data.error) throw new Error(data.error);
+
+      await API.saveConcept(AppState.currentBundle, newName, data.frontmatter, data.body, data.raw);
+      await API.deleteConcept(AppState.currentBundle, oldPath);
+
+      if (AppState.currentConcept === oldPath) {
+        AppState.openConcept(newName);
+        Editor.refreshPreview();
+      }
+
+      Toast.show('Renamed successfully', 'success');
+      this.renderTree();
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  },
+
+  async deleteFileConfirm(path) {
+    if (!confirm(`Delete "${path}"? This cannot be undone.`)) return;
+    try {
+      await API.deleteConcept(AppState.currentBundle, path);
+      if (AppState.currentConcept === path) {
+        AppState.closeConcept();
+        Editor.hideEditor();
+      }
+      Toast.show('Deleted', 'success');
+      this.renderTree();
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  },
+
+  // Refresh the entire tree
+  async refresh() {
+    AppState.expandedDirs.clear();
+    await this.renderTree();
+  },
+};
+
+/**
+ * OKF Wiki — Editor Module
+ * Handles concept viewing/editing, WYSIWYG/source toggle, frontmatter sync, autosave.
+ */
+
+const Editor = {
+  _currentRaw: null,
+  _currentFrontmatter: null,
+  _currentBody: null,
+
+  async init() {
+    // Source toggle button
+    document.getElementById('btn-source-toggle').addEventListener('click', () => this.toggleMode());
+
+    // Source editor (raw markdown) input marks dirty
+    document.getElementById('raw-editor').addEventListener('input', () => {
+      AppState.markDirty();
+    });
+
+    // Save button - disabled by default, enabled when dirty
+    const btnSave = document.getElementById('btn-save');
+    btnSave.disabled = true;
+    btnSave.addEventListener('click', () => this.saveCurrent());
+
+    // Hook into AppState to update save button on dirty changes
+    const originalMarkDirty = AppState.markDirty.bind(AppState);
+    AppState.markDirty = () => {
+      originalMarkDirty();
+      this.setSaveButtonState(true);
+    };
+
+    // Properties panel toggle
+    document.getElementById('btn-properties').addEventListener('click', () => {
+      AppState.togglePanel('properties');
+      this.updatePanelVisibility();
+      if (AppState.showProperties && AppState.currentConcept) {
+        this.loadProperties();
+      }
+    });
+
+    // Backlinks toggle
+    document.getElementById('btn-backlinks').addEventListener('click', () => {
+      AppState.togglePanel('backlinks');
+      this.updatePanelVisibility();
+      if (AppState.showBacklinks && AppState.currentConcept) {
+        this.loadBacklinks();
+      }
+    });
+
+    // Graph toggle
+    document.getElementById('btn-graph').addEventListener('click', () => {
+      AppState.togglePanel('graph');
+      this.updatePanelVisibility();
+      if (AppState.showGraph) {
+        Graph.init();
+      }
+    });
+
+    // Raw YAML sync
+    document.getElementById('prop-raw-yaml').addEventListener('input', () => this.syncFromRawYaml());
+
+    // Type selector
+    document.getElementById('prop-type').addEventListener('change', () => this.onPropertyChange());
+
+    // Title/description
+    document.getElementById('prop-title').addEventListener('input', () => {
+      this.onPropertyChange();
+      AppState.markDirty();
+    });
+    document.getElementById('prop-description').addEventListener('input', () => {
+      this.onPropertyChange();
+      AppState.markDirty();
+    });
+
+    // Status
+    document.getElementById('prop-status').addEventListener('change', () => this.onPropertyChange());
+
+    // Stale after
+    document.getElementById('prop-stale-after').addEventListener('change', () => this.onPropertyChange());
+
+    // Resource URL
+    document.getElementById('prop-resource').addEventListener('input', () => this.onPropertyChange());
+
+    // Tag input
+    document.getElementById('tag-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        this.addTag();
+      }
+    });
+
+    // Configure marked
+    this.configureMarked();
+  },
+
+  configureMarked() {
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+      headerIds: true,
+      mangle: false,
+    });
+
+    // Custom renderer for callouts
+    const renderer = new marked.Renderer();
+    renderer.paragraph = (text) => {
+      // Check for callout syntax: [!NOTE], [!TIP], etc.
+      const calloutMatch = text.match(/^\[!(NOTE|TIP|WARNING|CAUTION|IMPORTANT)\]\s*\n?(.*)/s);
+      if (calloutMatch) {
+        const type = calloutMatch[1].toLowerCase();
+        const content = calloutMatch[2].trim();
+        return `<div class="callout callout-${type}">${marked.parse(content)}</div>`;
+      }
+      return `<p>${text}</p>`;
+    };
+    marked.use({ renderer });
+  },
+
+  async openConcept(path) {
+    // Mark as currently open concept
+    AppState.currentConcept = path;
+    AppState.showGraph = false;
+
+    // Hide welcome, show editor
+    document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('editor-container').classList.remove('hidden');
+    document.getElementById('graph-container').classList.add('hidden');
+
+    // Update breadcrumb
+    document.getElementById('breadcrumb').textContent = AppState.getBreadcrumb(path);
+
+    try {
+      const data = await API.getConcept(AppState.currentBundle, path);
+      if (data.error) throw new Error(data.error);
+
+      this._currentRaw = data.raw;
+      this._currentFrontmatter = data.frontmatter;
+      this._currentBody = data.body;
+
+      // Cache
+      AppState.cacheConcept(AppState.currentBundle, path, data);
+
+      // Render in current mode
+      this.renderPreview();
+      this.updateSourceEditor();
+
+      // Update bundle name in topbar
+      document.getElementById('bundle-name').textContent = AppState.currentBundle;
+
+      // Load properties if panel is visible
+      if (AppState.showProperties) {
+        this.loadProperties();
+      }
+
+      // Load backlinks if panel is visible
+      if (AppState.showBacklinks) {
+        this.loadBacklinks();
+      }
+
+      // Reset dirty state
+      AppState._dirty = false;
+      this.setSaveButtonState(false);
+
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  },
+
+  hideEditor() {
+    AppState.currentConcept = null;
+    document.getElementById('editor-container').classList.add('hidden');
+    document.getElementById('graph-container').classList.add('hidden');
+    document.getElementById('welcome-screen').classList.remove('hidden');
+    document.getElementById('breadcrumb').textContent = '';
+    document.getElementById('bundle-name').textContent = AppState.currentBundle || 'No bundle selected';
+    this._currentRaw = null;
+    this._currentFrontmatter = null;
+    this._currentBody = null;
+    this.setSaveButtonState(false);
+  },
+
+  toggleMode() {
+    if (AppState.editorMode === 'preview') {
+      AppState.editorMode = 'source';
+      document.getElementById('live-preview').classList.add('hidden');
+      document.getElementById('source-editor').classList.remove('hidden');
+      document.getElementById('btn-source-toggle').innerHTML = '<i class="bi bi-eye"></i>';
+      document.getElementById('btn-source-toggle').title = 'Show Preview';
+      this.updateSourceEditor();
+    } else {
+      AppState.editorMode = 'preview';
+      document.getElementById('live-preview').classList.remove('hidden');
+      document.getElementById('source-editor').classList.add('hidden');
+      document.getElementById('btn-source-toggle').innerHTML = '<i class="bi bi-code-slash"></i>';
+      document.getElementById('btn-source-toggle').title = 'Show Source';
+      this.renderPreview();
+    }
+  },
+
+  // Update save button based on dirty state
+  setSaveButtonState(dirty) {
+    const btnSave = document.getElementById('btn-save');
+    if (!btnSave) return;
+    btnSave.disabled = !dirty;
+    if (dirty) {
+      btnSave.classList.add('active');
+    } else {
+      btnSave.classList.remove('active');
+    }
+  },
+
+  renderPreview() {
+    const container = document.getElementById('live-preview');
+    let html = marked.parse(this._currentBody || '');
+
+    // Add trust tier badge at top if we have frontmatter
+    if (this._currentFrontmatter) {
+      const tier = this.getTrustTier(this._currentFrontmatter);
+      const tierLabel = tier.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+      html = `<div style="margin-bottom:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span class="trust-badge ${tier}"><i class="bi bi-shield-check"></i> ${tierLabel}</span>
+        ${this._currentFrontmatter.status ? `<span class="trust-badge" style="background:var(--bg-tertiary);color:var(--text-secondary);">Status: ${this._currentFrontmatter.status}</span>` : ''}
+        ${this._currentFrontmatter.stale_after ? `<span class="trust-badge" style="background:var(--bg-tertiary);color:var(--warning);">Stale: ${this._currentFrontmatter.stale_after}</span>` : ''}
+      </div>` + html;
+    }
+
+    container.innerHTML = html;
+
+    // Render KaTeX
+    this.renderMath(container);
+
+    // Render Mermaid
+    this.renderMermaid(container);
+  },
+
+  updateSourceEditor() {
+    const textarea = document.getElementById('raw-editor');
+    textarea.value = this._currentRaw || '';
+  },
+
+  getTrustTier(fm) {
+    if (fm.verified) return 'human-reviewed';
+    if (fm.generated) return 'machine-confirmed';
+    return 'unverified';
+  },
+
+  async saveCurrent() {
+    if (!AppState.currentConcept || !this._currentFrontmatter) return false;
+
+    let raw;
+    if (AppState.editorMode === 'source') {
+      raw = document.getElementById('raw-editor').value;
+      // Parse from raw
+      const fm = this.parseFrontmatter(raw);
+      this._currentFrontmatter = fm;
+      this._currentRaw = raw;
+    } else {
+      // Rebuild from frontmatter + body
+      raw = this.buildRaw();
+      this._currentRaw = raw;
+    }
+
+    try {
+      await API.saveConcept(
+        AppState.currentBundle,
+        AppState.currentConcept,
+        this._currentFrontmatter,
+        this._currentBody,
+        raw
+      );
+      AppState._dirty = false;
+      this.setSaveButtonState(false);
+      Toast.show('Saved', 'success');
+
+      // Refresh explorer to pick up any changes
+      await Explorer.refresh();
+
+      return true;
+    } catch (err) {
+      Toast.show(err.message, 'error');
+      return false;
+    }
+  },
+
+  parseFrontmatter(text) {
+    const match = text.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
+    if (!match) return {};
+    try {
+      return yamlParse(match[1]) || {};
+    } catch {
+      return {};
+    }
+  },
+
+  buildRaw() {
+    const header = '---\n' + yamlDump(this._currentFrontmatter) + '---\n';
+    return header + (this._currentBody || '');
+  },
+
+  refreshPreview() {
+    if (AppState.editorMode === 'preview') {
+      this.renderPreview();
+    }
+  },
+
+  // --- Properties Panel ---
+
+  loadProperties() {
+    if (!this._currentFrontmatter) return;
+
+    document.getElementById('prop-type').value = this._currentFrontmatter.type || '';
+    document.getElementById('prop-title').value = this._currentFrontmatter.title || '';
+    document.getElementById('prop-description').value = this._currentFrontmatter.description || '';
+    document.getElementById('prop-status').value = this._currentFrontmatter.status || '';
+    document.getElementById('prop-stale-after').value = this._currentFrontmatter.stale_after || '';
+    document.getElementById('prop-resource').value = this._currentFrontmatter.resource || '';
+
+    // Tags
+    const tags = this._currentFrontmatter.tags || [];
+    this.renderTags(tags);
+
+    // Raw YAML
+    document.getElementById('prop-raw-yaml').value = yamlDump(this._currentFrontmatter);
+  },
+
+  renderTags(tags) {
+    const container = document.getElementById('tag-list');
+    container.innerHTML = '';
+    tags.forEach(tag => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = `${tag}<span class="tag-remove" data-tag="${tag}">×</span>`;
+      container.appendChild(chip);
+    });
+
+    container.querySelectorAll('.tag-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.removeTag(btn.dataset.tag);
+      });
+    });
+  },
+
+  addTag() {
+    const input = document.getElementById('tag-input');
+    const tag = input.value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
+    if (!tag) return;
+
+    if (!this._currentFrontmatter.tags) this._currentFrontmatter.tags = [];
+    if (this._currentFrontmatter.tags.includes(tag)) {
+      input.value = '';
+      return;
+    }
+
+    this._currentFrontmatter.tags.push(tag);
+    input.value = '';
+    this.renderTags(this._currentFrontmatter.tags);
+    this.syncToRawYaml();
+    AppState.markDirty();
+  },
+
+  removeTag(tag) {
+    if (!this._currentFrontmatter.tags) return;
+    this._currentFrontmatter.tags = this._currentFrontmatter.tags.filter(t => t !== tag);
+    this.renderTags(this._currentFrontmatter.tags);
+    this.syncToRawYaml();
+    AppState.markDirty();
+  },
+
+  onPropertyChange() {
+    this._currentFrontmatter.type = document.getElementById('prop-type').value;
+    this._currentFrontmatter.title = document.getElementById('prop-title').value;
+    this._currentFrontmatter.description = document.getElementById('prop-description').value;
+    this._currentFrontmatter.status = document.getElementById('prop-status').value;
+    this._currentFrontmatter.stale_after = document.getElementById('prop-stale-after').value;
+    this._currentFrontmatter.resource = document.getElementById('prop-resource').value;
+
+    this.syncToRawYaml();
+    AppState.markDirty();
+  },
+
+  syncFromRawYaml() {
+    const raw = document.getElementById('prop-raw-yaml').value;
+    try {
+      this._currentFrontmatter = yamlParse(raw) || {};
+      this.loadProperties();
+      AppState.markDirty();
+    } catch (err) {
+      Toast.show('Invalid YAML in frontmatter', 'warning');
+    }
+  },
+
+  syncToRawYaml() {
+    document.getElementById('prop-raw-yaml').value = yamlDump(this._currentFrontmatter);
+  },
+
+  updatePanelVisibility() {
+    document.getElementById('sidebar-properties').classList.toggle('hidden', !AppState.showProperties);
+    document.getElementById('sidebar-backlinks').classList.toggle('hidden', !AppState.showBacklinks);
+    document.getElementById('editor-area').querySelector('#graph-container').classList.toggle('hidden', !AppState.showGraph);
+  },
+
+  // --- Backlinks ---
+
+  async loadBacklinks() {
+    if (!AppState.currentConcept) return;
+    const container = document.getElementById('backlinks-list');
+    container.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-muted);"><i class="bi bi-arrow-repeat" style="animation:spin 1s linear infinite;"></i> Loading...</div>';
+
+    try {
+      const backlinks = await API.findBacklinks(AppState.currentBundle, AppState.currentConcept);
+      if (backlinks.length === 0) {
+        container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">No backlinks found</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      backlinks.forEach(bl => {
+        const item = document.createElement('div');
+        item.className = 'backlink-item';
+        item.innerHTML = `
+          <div class="bl-source"><i class="bi bi-file-earmark-text"></i> ${bl.source}</div>
+          <div class="bl-snippet">${bl.snippet}</div>
+        `;
+        item.addEventListener('click', () => {
+          window.State._contextPath = bl.source;
+          Explorer.refresh().then(() => {
+            Editor.openConcept(bl.source);
+          });
+        });
+        container.appendChild(item);
+      });
+    } catch (err) {
+      container.innerHTML = `<div style="padding:12px;color:var(--danger);">Error loading backlinks</div>`;
+    }
+  },
+
+  // --- Math & Diagrams ---
+
+  renderMath(container) {
+    // Block math: $$...$$
+    container.innerHTML = container.innerHTML.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
+      try {
+        return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
+      } catch {
+        return `<pre><code>${math}</code></pre>`;
+      }
+    });
+
+    // Inline math: $...$
+    container.innerHTML = container.innerHTML.replace(/\$([^\$]+?)\$/g, (_, math) => {
+      try {
+        return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+      } catch {
+        return `<code>${math}</code>`;
+      }
+    });
+  },
+
+  renderMermaid(container) {
+    container.querySelectorAll('.language-mermaid, [class*="language-mermaid"]').forEach(el => {
+      const code = el.textContent;
+      mermaid.run({ nodes: [el] }).catch(() => {
+        el.outerHTML = `<pre><code>${code}</code></pre>`;
+      });
+    });
+  },
+};
+
+// Minimal YAML helpers (since we can't import PyYAML in browser)
+function yamlParse(str) {
+  const result = {};
+  const lines = str.split('\n');
+  let currentKey = null;
+  let isArray = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    // Array item
+    if (trimmed.startsWith('- ')) {
+      if (currentKey && isArray) {
+        if (!result[currentKey]) result[currentKey] = [];
+        const val = trimmed.substring(2).trim();
+        result[currentKey].push(parseScalar(val));
+      }
+      continue;
+    }
+
+    // Key-value
+    const kvMatch = trimmed.match(/^(\w[\w-]*):\s*(.*)$/);
+    if (kvMatch) {
+      const key = kvMatch[1];
+      const val = kvMatch[2].trim();
+
+      if (val === '' || val === '|' || val === '>') {
+        // Start of a block or array
+        currentKey = key;
+        isArray = true;
+        // Check if next line is an array item
+        if (i + 1 < lines.length && lines[i + 1].trim().startsWith('- ')) {
+          result[key] = [];
+        } else {
+          result[key] = {};
+          isArray = false;
+        }
+      } else {
+        currentKey = null;
+        isArray = false;
+        result[key] = parseScalar(val);
+      }
+      continue;
+    }
+  }
+
+  return result;
+}
+
+function parseScalar(val) {
+  if (val === 'true') return true;
+  if (val === 'false') return false;
+  if (val === 'null' || val === '~') return null;
+  if (/^-?\d+$/.test(val)) return parseInt(val);
+  if (/^-?\d+\.\d+$/.test(val)) return parseFloat(val);
+  // Remove quotes
+  if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+    return val.slice(1, -1);
+  }
+  return val;
+}
+
+function yamlDump(obj) {
+  if (!obj || typeof obj !== 'object') return '';
+  let output = '';
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === null || value === undefined) continue;
+    if (Array.isArray(value)) {
+      output += `${key}:\n`;
+      value.forEach(v => {
+        output += `- ${formatValue(v)}\n`;
+      });
+    } else if (typeof value === 'object') {
+      output += `${key}:\n`;
+      for (const [k2, v2] of Object.entries(value)) {
+        output += `  ${k2}: ${formatValue(v2)}\n`;
+      }
+    } else {
+      output += `${key}: ${formatValue(value)}\n`;
+    }
+  }
+  return output;
+}
+
+function formatValue(val) {
+  if (typeof val === 'string') {
+    if (val.includes(':') || val.includes('#') || val.includes("'") || val.includes('"') || val.includes('\n')) {
+      return `"${val}"`;
+    }
+    return val;
+  }
+  return String(val);
+}
+
+/**
+ * OKF Wiki — Graph View Module
+ * Force-directed graph visualization of concept relationships using canvas.
+ */
+
+const Graph = {
+  _canvas: null,
+  _ctx: null,
+  _nodes: [],
+  _edges: [],
+  _animationId: null,
+  _dragging: null,
+  _hovered: null,
+  _zoom: 1,
+  _panX: 0,
+  _panY: 0,
+  _initialized: false,
+
+  async init() {
+    if (!AppState.currentBundle) return;
+
+    this._canvas = document.getElementById('graph-canvas');
+    this._ctx = this._canvas.getContext('2d');
+    this.resize();
+
+    // Load graph data
+    try {
+      const data = await API.getGraphData(AppState.currentBundle);
+      this._nodes = (data.nodes || []).map((n, i) => ({
+        ...n,
+        x: this._canvas.width / 2 + (Math.random() - 0.5) * 300,
+        y: this._canvas.height / 2 + (Math.random() - 0.5) * 300,
+        vx: 0,
+        vy: 0,
+        radius: 8 + (n.tags?.length || 0) * 2,
+      }));
+      this._edges = data.edges || [];
+
+      // Build legend
+      this.buildLegend();
+
+      // Setup interactions
+      this.setupEvents();
+
+      // Show graph view
+      document.getElementById('editor-container').classList.add('hidden');
+      document.getElementById('welcome-screen').classList.add('hidden');
+      document.getElementById('graph-container').classList.remove('hidden');
+
+      // Start animation
+      this.animate();
+
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  },
+
+  resize() {
+    const rect = this._canvas.parentElement.getBoundingClientRect();
+    this._canvas.width = rect.width;
+    this._canvas.height = rect.height;
+  },
+
+  setupEvents() {
+    // Mouse events
+    this._canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+    this._canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+    this._canvas.addEventListener('mouseup', () => this.onMouseUp());
+    this._canvas.addEventListener('mouseleave', () => this.onMouseUp());
+    this._canvas.addEventListener('wheel', (e) => this.onWheel(e));
+    this._canvas.addEventListener('dblclick', (e) => this.onDblClick(e));
+
+    // Window resize
+    window.addEventListener('resize', () => {
+      this.resize();
+    });
+
+    // Reset button
+    document.getElementById('btn-graph-reset').addEventListener('click', () => {
+      this._zoom = 1;
+      this._panX = 0;
+      this._panY = 0;
+      this._nodes.forEach(n => {
+        n.x = this._canvas.width / 2 + (Math.random() - 0.5) * 300;
+        n.y = this._canvas.height / 2 + (Math.random() - 0.5) * 300;
+      });
+    });
+
+    // Filter button
+    document.getElementById('btn-graph-filter').addEventListener('click', () => {
+      this.toggleFilter();
+    });
+  },
+
+  onMouseDown(e) {
+    const pos = this.getMousePos(e);
+    const node = this.findNodeAt(pos.x, pos.y);
+    if (node) {
+      this._dragging = node;
+      this._canvas.style.cursor = 'grabbing';
+    } else {
+      this._dragging = '_pan';
+      this._lastPanX = e.clientX - this._panX;
+      this._lastPanY = e.clientY - this._panY;
+      this._canvas.style.cursor = 'move';
+    }
+  },
+
+  onMouseMove(e) {
+    const pos = this.getMousePos(e);
+
+    if (this._dragging === '_pan') {
+      this._panX = e.clientX - this._lastPanX;
+      this._panY = e.clientY - this._lastPanY;
+      return;
+    }
+
+    if (this._dragging) {
+      this._dragging.x = pos.x;
+      this._dragging.y = pos.y;
+      this._dragging.vx = 0;
+      this._dragging.vy = 0;
+      return;
+    }
+
+    // Hover detection
+    const hovered = this.findNodeAt(pos.x, pos.y);
+    if (hovered !== this._hovered) {
+      this._hovered = hovered;
+      this._canvas.style.cursor = hovered ? 'pointer' : 'default';
+    }
+  },
+
+  onMouseUp() {
+    if (this._dragging && typeof this._dragging === 'object') {
+      // Node was dropped - could trigger open
+    }
+    this._dragging = null;
+    this._canvas.style.cursor = this._hovered ? 'pointer' : 'default';
+  },
+
+  onWheel(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    this._zoom = Math.max(0.2, Math.min(3, this._zoom * delta));
+  },
+
+  onDblClick(e) {
+    const pos = this.getMousePos(e);
+    const node = this.findNodeAt(pos.x, pos.y);
+    if (node) {
+      // Open the concept
+      Explorer.refresh().then(() => {
+        Editor.openConcept(node.id);
+        AppState.showGraph = false;
+        Editor.updatePanelVisibility();
+      });
+    }
+  },
+
+  getMousePos(e) {
+    const rect = this._canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left - this._panX) / this._zoom,
+      y: (e.clientY - rect.top - this._panY) / this._zoom,
+    };
+  },
+
+  findNodeAt(x, y) {
+    for (let i = this._nodes.length - 1; i >= 0; i--) {
+      const n = this._nodes[i];
+      const dx = x - n.x;
+      const dy = y - n.y;
+      if (dx * dx + dy * dy <= n.radius * n.radius) {
+        return n;
+      }
+    }
+    return null;
+  },
+
+  animate() {
+    this._animationId = requestAnimationFrame(() => this.animate());
+    this.simulate();
+    this.render();
+  },
+
+  simulate() {
+    const width = this._canvas.width;
+    const height = this._canvas.height;
+    const k = 0.5; // spring constant
+    const repulsion = 500;
+    const damping = 0.85;
+
+    // Repulsion between all nodes
+    for (let i = 0; i < this._nodes.length; i++) {
+      const a = this._nodes[i];
+      if (a === this._dragging) continue;
+
+      for (let j = i + 1; j < this._nodes.length; j++) {
+        const b = this._nodes[j];
+        let dx = a.x - b.x;
+        let dy = a.y - b.y;
+        let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        let force = repulsion / (dist * dist);
+
+        a.vx += (dx / dist) * force;
+        a.vy += (dy / dist) * force;
+        b.vx -= (dx / dist) * force;
+        b.vy -= (dy / dist) * force;
+      }
+    }
+
+    // Attraction along edges
+    for (const edge of this._edges) {
+      const source = this._nodes.find(n => n.id === edge.source);
+      const target = this._nodes.find(n => n.id === edge.target);
+      if (!source || !target) continue;
+
+      let dx = target.x - source.x;
+      let dy = target.y - source.y;
+      let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      let force = (dist - 100) * k;
+
+      if (source !== this._dragging) {
+        source.vx += (dx / dist) * force;
+        source.vy += (dy / dist) * force;
+      }
+      if (target !== this._dragging) {
+        target.vx -= (dx / dist) * force;
+        target.vy -= (dy / dist) * force;
+      }
+    }
+
+    // Center gravity
+    for (const n of this._nodes) {
+      if (n === this._dragging) continue;
+      n.vx += (width / 2 - n.x) * 0.001;
+      n.vy += (height / 2 - n.y) * 0.001;
+    }
+
+    // Apply velocities
+    for (const n of this._nodes) {
+      if (n === this._dragging) continue;
+      n.vx *= damping;
+      n.vy *= damping;
+      n.x += n.vx;
+      n.y += n.vy;
+
+      // Boundary constraints
+      const margin = 50;
+      if (n.x < margin) { n.x = margin; n.vx *= -0.5; }
+      if (n.x > width - margin) { n.x = width - margin; n.vx *= -0.5; }
+      if (n.y < margin) { n.y = margin; n.vy *= -0.5; }
+      if (n.y > height - margin) { n.y = height - margin; n.vy *= -0.5; }
+    }
+  },
+
+  render() {
+    const ctx = this._ctx;
+    const width = this._canvas.width;
+    const height = this._canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.save();
+    ctx.translate(this._panX, this._panY);
+    ctx.scale(this._zoom, this._zoom);
+
+    // Draw edges
+    for (const edge of this._edges) {
+      const source = this._nodes.find(n => n.id === edge.source);
+      const target = this._nodes.find(n => n.id === edge.target);
+      if (!source || !target) continue;
+
+      const isHighlighted = this._hovered && (this._hovered.id === edge.source || this._hovered.id === edge.target);
+
+      ctx.beginPath();
+      ctx.moveTo(source.x, source.y);
+      ctx.lineTo(target.x, target.y);
+      ctx.strokeStyle = isHighlighted ? 'rgba(76, 110, 245, 0.8)' : 'rgba(140, 150, 170, 0.3)';
+      ctx.lineWidth = isHighlighted ? 2 : 1;
+      ctx.stroke();
+
+      // Arrow
+      if (isHighlighted) {
+        const angle = Math.atan2(target.y - source.y, target.x - source.x);
+        const arrowLen = 10;
+        ctx.beginPath();
+        ctx.moveTo(target.x, target.y);
+        ctx.lineTo(target.x - arrowLen * Math.cos(angle - 0.4), target.y - arrowLen * Math.sin(angle - 0.4));
+        ctx.moveTo(target.x, target.y);
+        ctx.lineTo(target.x - arrowLen * Math.cos(angle + 0.4), target.y - arrowLen * Math.sin(angle + 0.4));
+        ctx.stroke();
+      }
+    }
+
+    // Draw nodes
+    for (const node of this._nodes) {
+      const isHovered = this._hovered === node;
+      const isConnected = this._hovered && this._edges.some(e =>
+        (e.source === this._hovered.id && e.target === node.id) ||
+        (e.target === this._hovered.id && e.source === node.id)
+      );
+      const dimmed = this._hovered && !isHovered && !isConnected;
+
+      ctx.globalAlpha = dimmed ? 0.2 : 1;
+
+      // Node circle
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+      ctx.fillStyle = AppState.getTrustColor(node.trust_tier);
+      ctx.fill();
+
+      if (isHovered) {
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+
+      // Label
+      ctx.globalAlpha = dimmed ? 0.2 : (isHovered ? 1 : 0.8);
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+      ctx.font = `${isHovered ? '600' : '400'} ${isHovered ? 12 : 10}px -apple-system, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(node.label, node.x, node.y + node.radius + 14);
+
+      // Type badge
+      if (isHovered && node.type) {
+        ctx.font = '500 9px -apple-system, sans-serif';
+        ctx.fillStyle = AppState.getTrustColor(node.trust_tier);
+        ctx.fillText(node.type, node.x, node.y + node.radius + 26);
+      }
+    }
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  },
+
+  buildLegend() {
+    const legend = document.getElementById('graph-legend');
+    const types = new Map();
+    const tiers = new Map();
+
+    for (const n of this._nodes) {
+      if (n.type) types.set(n.type, (types.get(n.type) || 0) + 1);
+      const tier = n.trust_tier || 'unverified';
+      tiers.set(tier, (tiers.get(tier) || 0) + 1);
+    }
+
+    let html = '<div style="font-weight:600;margin-bottom:6px;">Trust Tier</div>';
+    for (const [tier, count] of tiers) {
+      const color = AppState.getTrustColor(tier);
+      const label = tier.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+      html += `<div class="legend-item"><span class="legend-dot" style="background:${color};"></span>${label} (${count})</div>`;
+    }
+
+    if (types.size > 0) {
+      html += '<div style="font-weight:600;margin:8px 0 4px;">Types</div>';
+      for (const [type, count] of types) {
+        html += `<div class="legend-item"><span style="font-size:10px;">${type}</span> (${count})</div>`;
+      }
+    }
+
+    legend.innerHTML = html;
+  },
+
+  toggleFilter() {
+    // Simple type filter - cycle through showing all types
+    const types = [...new Set(this._nodes.map(n => n.type).filter(Boolean))];
+    if (types.length === 0) return;
+
+    const currentFilter = localStorage.getItem('okf-graph-filter');
+    let nextIdx;
+    if (!currentFilter) {
+      nextIdx = 0;
+    } else {
+      nextIdx = parseInt(currentFilter) + 1;
+      if (nextIdx >= types.length) nextIdx = -1; // -1 means show all
+    }
+
+    if (nextIdx === -1) {
+      localStorage.removeItem('okf-graph-filter');
+      this._nodes.forEach(n => n._visible = true);
+      Toast.show('Showing all types', 'success');
+    } else {
+      localStorage.setItem('okf-graph-filter', nextIdx.toString());
+      const filterType = types[nextIdx];
+      this._nodes.forEach(n => {
+        n._visible = n.type === filterType;
+      });
+      Toast.show(`Filtered by: ${filterType}`, 'success');
+    }
+  },
+
+  destroy() {
+    if (this._animationId) {
+      cancelAnimationFrame(this._animationId);
+      this._animationId = null;
+    }
+  },
+};
+
+/**
+ * OKF Wiki — Search Module
+ * Fuzzy search across concepts with keyboard navigation.
+ */
+
+const Search = {
+  _input: null,
+  _results: null,
+  _selectedIndex: -1,
+  _debounceTimer: null,
+
+  init() {
+    this._input = document.getElementById('search-input');
+    this._results = document.getElementById('search-results');
+
+    this._input.addEventListener('input', () => this.onInput());
+    this._input.addEventListener('focus', () => {
+      if (this._input.value.length >= 2) this.onInput();
+    });
+    this._input.addEventListener('keydown', (e) => this.onKeyDown(e));
+    this._input.addEventListener('blur', () => {
+      setTimeout(() => this._results.classList.add('hidden'), 200);
+    });
+  },
+
+  onInput() {
+    const query = this._input.value.trim();
+    clearTimeout(this._debounceTimer);
+
+    if (query.length < 2 || !AppState.currentBundle) {
+      this._results.classList.add('hidden');
+      return;
+    }
+
+    this._debounceTimer = setTimeout(() => this.search(query), 200);
+  },
+
+  async search(query) {
+    try {
+      const results = await API.searchConcepts(AppState.currentBundle, query, 'all');
+
+      if (results.length === 0) {
+        this._results.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:13px;">No results found</div>';
+        this._results.classList.remove('hidden');
+        return;
+      }
+
+      this._results.innerHTML = '';
+      this._selectedIndex = -1;
+
+      results.slice(0, 15).forEach((r, i) => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.dataset.index = i;
+        item.dataset.path = r.path;
+
+        const icon = AppState.getTypeIcon(r.type);
+        item.innerHTML = `
+          <span class="sr-title"><i class="bi ${icon}" style="margin-right:4px;"></i>${r.title || r.path}</span>
+          <span class="sr-type">${r.type || ''}</span>
+          <br><span class="sr-path">${r.path}</span>
+        `;
+
+        item.addEventListener('click', () => {
+          this.selectResult(r.path);
+        });
+
+        this._results.appendChild(item);
+      });
+
+      this._results.classList.remove('hidden');
+    } catch (err) {
+      console.error('Search failed:', err);
+    }
+  },
+
+  onKeyDown(e) {
+    const items = this._results.querySelectorAll('.search-result-item');
+    if (!items.length) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        this._selectedIndex = Math.min(this._selectedIndex + 1, items.length - 1);
+        this.highlightSelected(items);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        this._selectedIndex = Math.max(this._selectedIndex - 1, 0);
+        this.highlightSelected(items);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (this._selectedIndex >= 0 && items[this._selectedIndex]) {
+          const path = items[this._selectedIndex].dataset.path;
+          this.selectResult(path);
+        } else if (items.length > 0) {
+          // Select first result
+          this.selectResult(items[0].dataset.path);
+        }
+        break;
+      case 'Escape':
+        this._results.classList.add('hidden');
+        this._input.blur();
+        break;
+    }
+  },
+
+  highlightSelected(items) {
+    items.forEach((item, i) => {
+      item.classList.toggle('active', i === this._selectedIndex);
+      if (i === this._selectedIndex) {
+        item.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  },
+
+  selectResult(path) {
+    this._results.classList.add('hidden');
+    this._input.value = '';
+    this._input.blur();
+
+    Explorer.refresh().then(() => {
+      Editor.openConcept(path);
+    });
+  },
+
+  clear() {
+    this._input.value = '';
+    this._results.classList.add('hidden');
+    this._selectedIndex = -1;
+  },
+};
+
+/**
+ * OKF Wiki — Command Palette Module
+ * Ctrl+P command palette with fuzzy matching.
+ */
+
+const Commands = {
+  _modal: null,
+  _input: null,
+  _results: null,
+  _selectedIndex: -1,
+  _commands: [],
+
+  init() {
+    this._modal = document.getElementById('modal-command-palette');
+    this._input = document.getElementById('command-input');
+    this._results = document.getElementById('command-results');
+
+    this._input.addEventListener('input', () => this.filter());
+    this._input.addEventListener('focus', () => {
+      if (this._input.value.length >= 2) this.onInput();
+    });
+    this._input.addEventListener('keydown', (e) => this.onKeyDown(e));
+    this._input.addEventListener('blur', () => setTimeout(() => this.hide(), 200));
+
+    // Register commands
+    this.registerCommands();
+  },
+
+  registerCommands() {
+    const bundle = AppState.currentBundle;
+
+    this._commands = [
+      // Navigation
+      { id: 'new-file', label: 'New Concept', icon: 'bi-file-earmark-plus', key: 'Ctrl+N', action: () => Modals.showNewFile() },
+      { id: 'bundles', label: 'Switch Bundle', icon: 'bi-collection', key: '', action: () => Modals.showBundles() },
+
+      // Views
+      { id: 'toggle-explorer', label: 'Toggle Explorer', icon: 'bi-layout-sidebar', key: 'Ctrl+B', action: () => {
+        AppState.showExplorer = !AppState.showExplorer;
+        document.getElementById('sidebar-explorer').classList.toggle('hidden', !AppState.showExplorer);
+      }},
+      { id: 'toggle-properties', label: 'Toggle Properties Panel', icon: 'bi-sliders', key: '', action: () => {
+        AppState.togglePanel('properties');
+        Editor.updatePanelVisibility();
+        if (AppState.showProperties && AppState.currentConcept) Editor.loadProperties();
+      }},
+      { id: 'toggle-backlinks', label: 'Toggle Backlinks', icon: 'bi-link-45deg', key: '', action: () => {
+        AppState.togglePanel('backlinks');
+        Editor.updatePanelVisibility();
+        if (AppState.showBacklinks && AppState.currentConcept) Editor.loadBacklinks();
+      }},
+      { id: 'toggle-graph', label: 'Toggle Graph View', icon: 'bi-diagram-3', key: '', action: () => {
+        AppState.togglePanel('graph');
+        Editor.updatePanelVisibility();
+        if (AppState.showGraph) Graph.init();
+      }},
+      { id: 'toggle-source', label: 'Toggle Source/Live Mode', icon: 'bi-code-slash', key: '⌘⌥E', action: () => Editor.toggleMode() },
+
+      // Actions
+      { id: 'validate-current', label: 'Validate Current Concept', icon: 'bi-shield-check', key: '', action: () => {
+        if (AppState.currentConcept) Modals.showValidation(AppState.currentConcept);
+      }},
+      { id: 'validate-bundle', label: 'Validate Entire Bundle', icon: 'bi-shield-fill-check', key: '', action: () => {
+        if (AppState.currentBundle) Modals.showValidation(null, true);
+      }},
+      { id: 'save', label: 'Save Current Concept', icon: 'bi-check2', key: 'Ctrl+S', action: () => Editor.saveCurrent() },
+
+      // Theme
+      { id: 'toggle-theme', label: `Switch to ${AppState.theme === 'light' ? 'Dark' : 'Light'} Mode`, icon: 'bi-moon-stars', key: '', action: () => {
+        AppState.toggleTheme();
+        Toast.show(`Switched to ${AppState.theme} mode`, 'success');
+      }},
+
+      // Import/Export
+      { id: 'export-bundle', label: 'Export Bundle as JSON', icon: 'bi-download', key: '', action: () => this.exportBundle() },
+      { id: 'import-demo', label: 'Import Demo Bundle', icon: 'bi-cloud-download', key: '', action: () => this.importDemo() },
+    ];
+  },
+
+  show() {
+    this.registerCommands(); // Refresh commands list
+    this._input.value = '';
+    this._results.innerHTML = '';
+    this._selectedIndex = -1;
+    this._modal.classList.remove('hidden');
+    setTimeout(() => this._input.focus(), 50);
+  },
+
+  hide() {
+    this._modal.classList.add('hidden');
+  },
+
+  filter() {
+    const query = this._input.value.trim().toLowerCase();
+    const filtered = query
+      ? this._commands.filter(c => c.label.toLowerCase().includes(query) || c.id.includes(query))
+      : this._commands;
+
+    this._results.innerHTML = '';
+    this._selectedIndex = -1;
+
+    if (filtered.length === 0) {
+      this._results.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-muted);">No commands found</div>';
+      return;
+    }
+
+    filtered.forEach((cmd, i) => {
+      const item = document.createElement('div');
+      item.className = 'command-item';
+      item.dataset.index = i;
+      item.innerHTML = `
+        <span class="ci-icon"><i class="bi ${cmd.icon}"></i></span>
+        <span class="ci-label">${cmd.label}</span>
+        ${cmd.key ? `<span class="ci-key">${cmd.key}</span>` : ''}
+      `;
+      item.addEventListener('click', () => {
+        cmd.action();
+        this.hide();
+      });
+      this._results.appendChild(item);
+    });
+  },
+
+  onKeyDown(e) {
+    const items = this._results.querySelectorAll('.command-item');
+    if (!items.length) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        this._selectedIndex = Math.min(this._selectedIndex + 1, items.length - 1);
+        this.highlightSelected(items);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        this._selectedIndex = Math.max(this._selectedIndex - 1, 0);
+        this.highlightSelected(items);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (this._selectedIndex >= 0 && items[this._selectedIndex]) {
+          items[this._selectedIndex].click();
+        } else if (items.length > 0) {
+          items[0].click();
+        }
+        break;
+      case 'Escape':
+        this.hide();
+        break;
+    }
+  },
+
+  highlightSelected(items) {
+    items.forEach((item, i) => {
+      item.classList.toggle('selected', i === this._selectedIndex);
+      if (i === this._selectedIndex) item.scrollIntoView({ block: 'nearest' });
+    });
+  },
+
+  async exportBundle() {
+    if (!AppState.currentBundle) return;
+    try {
+      const data = await API.exportBundle(AppState.currentBundle);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${AppState.currentBundle}-export.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      Toast.show('Bundle exported', 'success');
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  },
+
+  async importDemo() {
+    // Create a demo bundle with sample concepts
+    try {
+      const demoName = 'demo-knowledge-base';
+      const result = await API.createBundle(demoName);
+      if (result.error) throw new Error(result.error);
+
+      // Create sample concepts using simple strings (no template literals to avoid backtick conflicts)
+      const samples = [
+        {
+          path: 'index.md',
+          frontmatter: { type: 'Directory', title: demoName, description: 'Demo knowledge base' },
+          body: '# Demo Knowledge Base\n\nThis is a demo OKF bundle.\n',
+        },
+        {
+          path: 'concepts/welcome.md',
+          frontmatter: { type: 'Concept', title: 'Welcome', description: 'Getting started with OKF Wiki', tags: ['getting-started', 'tutorial'] },
+          body: this.getWelcomeBody(),
+        },
+        {
+          path: 'concepts/how-to-edit.md',
+          frontmatter: { type: 'How-to', title: 'How to Edit Concepts', description: 'Step-by-step editing guide', tags: ['tutorial', 'editing'] },
+          body: this.getHowToBody(),
+        },
+        {
+          path: 'reference/okf-spec.md',
+          frontmatter: { type: 'Reference', title: 'OKF Specification', description: 'Open Knowledge Format spec reference', tags: ['spec', 'reference', 'okf'] },
+          body: this.getSpecBody(),
+        },
+        {
+          path: 'playbooks/team-rules.md',
+          frontmatter: { type: 'Playbook', title: 'Team Contribution Rules', description: 'Guidelines for contributing to the knowledge base', tags: ['team', 'rules', 'playbook'] },
+          body: this.getTeamRulesBody(),
+        },
+      ];
+
+      for (const sample of samples) {
+        await API.saveConcept(demoName, sample.path, sample.frontmatter, sample.body);
+      }
+
+      // Switch to demo bundle
+      AppState.setBundle(demoName);
+      await Explorer.refresh();
+      Toast.show('Demo bundle "' + demoName + '" created!', 'success');
+
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  },
+
+  getWelcomeBody() {
+    var lines = [];
+    lines.push('# Welcome to OKF Wiki!');
+    lines.push('');
+    lines.push("This is your **Open Knowledge Format** wiki. Here is what you can do:");
+    lines.push('');
+    lines.push('## Features');
+    lines.push('');
+    lines.push('- Create bundles (knowledge vaults)');
+    lines.push('- Edit concepts with WYSIWYG or source mode');
+    lines.push('- Visual frontmatter properties panel');
+    lines.push('- Backlinks and graph view');
+    lines.push('- OKF validation');
+    lines.push('');
+    lines.push('## Quick Start');
+    lines.push('');
+    lines.push('1. Create a new bundle from the bundle picker');
+    lines.push('2. Right-click in the explorer to create concepts');
+    lines.push('3. Use the properties panel to set metadata');
+    lines.push('4. Toggle between live preview and source mode');
+    lines.push('');
+    lines.push('## OKF Format');
+    lines.push('');
+    lines.push('Every concept file has YAML frontmatter:');
+    lines.push('');
+    lines.push('```yaml');
+    lines.push('type: Concept');
+    lines.push('title: My Concept');
+    lines.push('description: What it is about');
+    lines.push('tags: [tag1, tag2]');
+    lines.push('```');
+    lines.push('');
+    lines.push('## Links');
+    lines.push('');
+    lines.push('Check out the [Welcome](./welcome.md) concept for more info.');
+    lines.push('');
+    lines.push('> [!TIP] Use keyboard shortcuts like Ctrl+N for new files and Ctrl+S to save.');
+    return lines.join('\n');
+  },
+
+  getHowToBody() {
+    var lines = [];
+    lines.push('# How to Edit Concepts');
+    lines.push('');
+    lines.push('## Opening a Concept');
+    lines.push('');
+    lines.push('Click on any `*.md` file in the explorer sidebar to open it.');
+    lines.push('');
+    lines.push('## Editing Modes');
+    lines.push('');
+    lines.push('### Live Preview (WYSIWYG)');
+    lines.push('By default, you see a rendered markdown preview. The content is stored as raw markdown.');
+    lines.push('');
+    lines.push('### Source Mode');
+    lines.push('Click the code icon (`<>`) in the top bar to toggle to source mode where you can edit raw markdown directly.');
+    lines.push('');
+    lines.push('## Saving');
+    lines.push('');
+    lines.push('Changes are autosaved after 3 seconds of inactivity. You can also manually save with `Ctrl+S`.');
+    lines.push('');
+    lines.push('## Properties');
+    lines.push('');
+    lines.push('Use the properties panel (right sidebar) to edit:');
+    lines.push('');
+    lines.push('- **Type**: Concept, Reference, How-to, Decision, etc.');
+    lines.push('- **Title**: Display name');
+    lines.push('- **Description**: Brief summary');
+    lines.push('- **Tags**: For classification');
+    lines.push('- **Status**: draft, stable, deprecated');
+    lines.push('- **Stale After**: Expiration date');
+    lines.push('');
+    lines.push('## Callouts');
+    lines.push('');
+    lines.push('You can use callout blocks:');
+    lines.push('');
+    lines.push('```markdown');
+    lines.push('> [!NOTE]');
+    lines.push('> This is a note');
+    lines.push('');
+    lines.push('> [!TIP]');
+    lines.push('> Here is a helpful tip');
+    lines.push('');
+    lines.push('> [!WARNING]');
+    lines.push('> Watch out for this');
+    lines.push('');
+    lines.push('> [!CAUTION]');
+    lines.push('> Be careful here');
+    lines.push('');
+    lines.push('> [!IMPORTANT]');
+    lines.push('> This is important');
+    lines.push('```');
+    return lines.join('\n');
+  },
+
+  getSpecBody() {
+    var lines = [];
+    lines.push('# OKF Specification v0.2');
+    lines.push('');
+    lines.push('The Open Knowledge Format (OKF) represents knowledge as a directory of markdown files with YAML frontmatter.');
+    lines.push('');
+    lines.push('## Core Requirements');
+    lines.push('');
+    lines.push('- Every file must have a `type` field in frontmatter');
+    lines.push('- Standard markdown links: `[title](/path/to/file.md)`');
+    lines.push('- Reserved filenames: `index.md` (directory listing), `log.md` (change history)');
+    lines.push('');
+    lines.push('## Optional Fields');
+    lines.push('');
+    lines.push('- `title`: Human-readable title');
+    lines.push('- `description`: Brief description');
+    lines.push('- `tags`: Array of tags for classification');
+    lines.push('- `status`: draft | stable | deprecated');
+    lines.push('- `stale_after`: ISO 8601 date');
+    lines.push('- `generated`: Machine provenance');
+    lines.push('- `verified`: Human verification records');
+    lines.push('- `resource`: External resource URL');
+    lines.push('');
+    lines.push('## Directory Structure');
+    lines.push('');
+    lines.push('Each subdirectory within a bundle is a separate vault with its own `index.md`.');
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+    lines.push('*Full spec: https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md*');
+    return lines.join('\n');
+  },
+
+  getTeamRulesBody() {
+    var lines = [];
+    lines.push('# Team Contribution Rules');
+    lines.push('');
+    lines.push('## Guidelines');
+    lines.push('');
+    lines.push('1. Always set a `type` for every concept');
+    lines.push('2. Use descriptive titles');
+    lines.push('3. Add relevant tags');
+    lines.push('4. Link to related concepts');
+    lines.push('5. Keep descriptions concise');
+    lines.push('');
+    lines.push('## Review Process');
+    lines.push('');
+    lines.push('- Draft → Stable → Deprecated');
+    lines.push('- Use `verified` field for reviewed content');
+    lines.push('- Set `stale_after` for time-sensitive information');
+    lines.push('');
+    lines.push('## Tagging Conventions');
+    lines.push('');
+    lines.push('- Use lowercase tags');
+    lines.push('- Prefer existing tags over creating new ones');
+    lines.push('- Tags for cross-cutting concerns, not hierarchy');
+    lines.push('');
+    lines.push('See also: [OKF Spec](../reference/okf-spec.md)');
+    return lines.join('\n');
+  },
+};
+
+/**
+ * OKF Wiki — Modals Module
+ * Modal dialogs for bundles, new files, validation, etc.
+ */
+
+const Modals = {
+  init() {
+    // Close buttons on all modals
+    document.querySelectorAll('.modal-close').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.closest('.modal').classList.add('hidden');
+      });
+    });
+
+    // Backdrop clicks
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.addEventListener('click', () => {
+        backdrop.closest('.modal').classList.add('hidden');
+      });
+    });
+
+    // New file creation
+    document.getElementById('btn-cancel-new').addEventListener('click', () => {
+      this.hideNewFile();
+    });
+
+    document.getElementById('btn-create-new').addEventListener('click', async () => {
+      await this.createNewConcept();
+    });
+
+    // Welcome screen buttons
+    const btnOpenCollections = document.getElementById('btn-open-collections');
+    if (btnOpenCollections) {
+      btnOpenCollections.addEventListener('click', () => {
+        this.showBundles();
+      });
+    }
+
+    // Theme toggle
+    document.getElementById('btn-theme').addEventListener('click', () => {
+      AppState.toggleTheme();
+      const icon = document.getElementById('btn-theme').querySelector('i');
+      icon.className = AppState.theme === 'light' ? 'bi bi-moon-stars' : 'bi bi-sun';
+    });
+
+    // Validate button
+    document.getElementById('btn-validate').addEventListener('click', () => {
+      if (AppState.currentConcept) {
+        this.showValidation(AppState.currentConcept);
+      } else if (AppState.currentBundle) {
+        this.showValidation(null, true);
+      } else {
+        Toast.show('Select a bundle first', 'warning');
+      }
+    });
+
+    // New file button in topbar
+    document.getElementById('btn-new-file').addEventListener('click', () => {
+      this.showNewFile();
+    });
+  },
+
+  // --- Bundle Picker ---
+
+  async showBundles() {
+    const modal = document.getElementById('modal-bundles');
+    modal.classList.remove('hidden');
+
+    const list = document.getElementById('bundles-list');
+    list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);"><i class="bi bi-arrow-repeat" style="animation:spin 1s linear infinite;"></i></div>';
+
+    try {
+      const bundles = await API.listBundles();
+
+      if (bundles.length === 0) {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">No collections found.<br>Create a subdirectory under /home/omnideck/wiki/</div>';
+        return;
+      }
+
+      list.innerHTML = '';
+      bundles.forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'bundle-card';
+        if (b.id === AppState.currentBundle) card.style.borderColor = 'var(--accent)';
+
+        card.innerHTML = `
+          <span class="bc-icon"><i class="bi bi-folder2-open"></i></span>
+          <div class="bc-info">
+            <div class="bc-name">${b.id}</div>
+            <div class="bc-meta">${b.concept_count} concepts · ${b.has_index ? 'index.md ✓' : 'no index'}</div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          AppState.setBundle(b.id);
+          this.hideBundles();
+          Explorer.refresh().then(() => {
+            document.getElementById('bundle-name').textContent = b.id;
+          });
+        });
+
+        list.appendChild(card);
+      });
+
+    } catch (err) {
+      list.innerHTML = `<div style="padding:16px;color:var(--danger);">Error loading collections</div>`;
+    }
+  },
+
+  hideBundles() {
+    document.getElementById('modal-bundles').classList.add('hidden');
+  },
+
+  // --- New File ---
+
+  showNewFile() {
+    const modal = document.getElementById('modal-new-file');
+    modal.classList.remove('hidden');
+
+    const nameInput = document.getElementById('new-file-name');
+    nameInput.value = '';
+    nameInput.focus();
+
+    // Populate folder selector
+    const folderSelect = document.getElementById('new-file-folder');
+    folderSelect.innerHTML = '<option value="">(root)</option>';
+
+    if (AppState.currentBundle) {
+      this.loadFolders(folderSelect, '');
+    }
+
+    // Load templates
+    this.loadTemplates();
+  },
+
+  hideNewFile() {
+    document.getElementById('modal-new-file').classList.add('hidden');
+  },
+
+  async loadFolders(select, path) {
+    if (!AppState.currentBundle) return;
+    try {
+      const result = await API.listDirectory(AppState.currentBundle, path);
+      for (const dir of result.directories) {
+        const fullDir = path ? `${path}/${dir}` : dir;
+        const option = document.createElement('option');
+        option.value = fullDir;
+        option.textContent = fullDir || '(root)';
+        select.appendChild(option);
+      }
+    } catch (err) {
+      console.error('Failed to load folders:', err);
+    }
+  },
+
+  async loadTemplates() {
+    if (!AppState.currentBundle) return;
+    try {
+      const templates = await API.listTemplates(AppState.currentBundle, window.State._newFileInDir || '');
+      const group = document.getElementById('template-selector-group');
+      const select = document.getElementById('new-file-template');
+      select.innerHTML = '<option value="">(none)</option>';
+
+      if (templates.length > 0) {
+        group.style.display = 'block';
+        templates.forEach(t => {
+          const option = document.createElement('option');
+          option.value = JSON.stringify(t.frontmatter);
+          option.textContent = t.path;
+          select.appendChild(option);
+        });
+      } else {
+        group.style.display = 'none';
+      }
+    } catch (err) {
+      console.error('Failed to load templates:', err);
+    }
+  },
+
+  async createNewConcept() {
+    const name = document.getElementById('new-file-name').value.trim();
+    const folder = document.getElementById('new-file-folder').value;
+    const type = document.getElementById('new-file-type').value;
+    const templateStr = document.getElementById('new-file-template').value;
+
+    if (!name) {
+      Toast.show('Please enter a filename', 'warning');
+      return;
+    }
+
+    // Ensure .md extension
+    const fileName = name.endsWith('.md') ? name : name + '.md';
+    const path = folder ? `${folder}/${fileName}` : fileName;
+
+    const frontmatter = { type };
+    let template = undefined;
+
+    if (templateStr) {
+      try {
+        template = JSON.parse(templateStr);
+      } catch { /* ignore */ }
+    }
+
+    try {
+      await API.createConcept(AppState.currentBundle, path, frontmatter, '', template);
+      this.hideNewFile();
+      Toast.show(`Created "${fileName}"`, 'success');
+
+      await Explorer.refresh();
+      Editor.openConcept(path);
+
+    } catch (err) {
+      Toast.show(err.message, 'error');
+    }
+  },
+
+  // --- Validation ---
+
+  async showValidation(conceptPath, validateAll = false) {
+    const modal = document.getElementById('modal-validation');
+    modal.classList.remove('hidden');
+
+    const summary = document.getElementById('validation-summary');
+    const details = document.getElementById('validation-details');
+    summary.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);">Validating...</div>';
+    details.innerHTML = '';
+
+    try {
+      let result;
+      if (validateAll && AppState.currentBundle) {
+        result = await API.validateBundle(AppState.currentBundle);
+      } else if (conceptPath && AppState.currentBundle) {
+        result = await API.validateConcept(AppState.currentBundle, conceptPath);
+      } else {
+        throw new Error('No bundle or concept selected');
+      }
+
+      // Summary
+      if (result.errors !== undefined) {
+        // Bundle-level validation
+        summary.innerHTML = `
+          <div class="validation-summary">
+            <div class="vs-item vs-errors"><div class="vs-count">${result.errors}</div><div class="vs-label">Errors</div></div>
+            <div class="vs-item vs-warnings"><div class="vs-count">${result.warnings}</div><div class="vs-label">Warnings</div></div>
+            <div class="vs-item vs-info"><div class="vs-count">${result.total}</div><div class="vs-label">Total Concepts</div></div>
+          </div>
+        `;
+      } else {
+        const status = result.valid ? '✓ Valid' : '✗ Has Issues';
+        const color = result.valid ? 'var(--success)' : 'var(--danger)';
+        summary.innerHTML = `
+          <div style="font-size:18px;font-weight:600;color:${color};margin-bottom:4px;">${status}</div>
+          <div style="font-size:13px;color:var(--text-secondary);">${conceptPath || 'Entire bundle'}</div>
+        `;
+      }
+
+      // Details
+      if (result.details && result.details.length > 0) {
+        details.innerHTML = '';
+        result.details.forEach(d => {
+          const item = document.createElement('div');
+          item.className = `vd-item vd-${d.level}`;
+          item.innerHTML = `
+            <span class="vd-path">${d.path || ''}</span>
+            <span>${d.issue}</span>
+          `;
+          details.appendChild(item);
+        });
+      } else if (result.issues && result.issues.length > 0) {
+        details.innerHTML = '';
+        result.issues.forEach(issue => {
+          const item = document.createElement('div');
+          item.className = `vd-item vd-${issue.level}`;
+          item.innerHTML = `
+            <span class="vd-path">${issue.field || ''}</span>
+            <span>${issue.message}</span>
+          `;
+          details.appendChild(item);
+        });
+      } else {
+        details.innerHTML = '<div style="padding:12px;text-align:center;color:var(--success);"><i class="bi bi-check-circle"></i> No issues found!</div>';
+      }
+
+    } catch (err) {
+      summary.innerHTML = '';
+      details.innerHTML = `<div style="padding:12px;color:var(--danger);">Error: ${err.message}</div>`;
+    }
+  },
+};
+
+/**
+ * OKF Wiki — Main Application Entry Point
+ * Initializes all modules, sets up keyboard shortcuts, and handles lifecycle.
+ */
+
+// Global references for cross-module access
+window.State = AppState;
+window.Explorer = Explorer;
+window.Editor = Editor;
+window.Graph = Graph;
+window.Search = Search;
+window.Commands = Commands;
+window.Modals = Modals;
+window.API = API;
+
+// Toast notification system
+const Toast = {
+  show(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+
+    const icons = {
+      success: 'bi-check-circle',
+      error: 'bi-exclamation-circle',
+      warning: 'bi-exclamation-triangle',
+    };
+
+    toast.innerHTML = `<i class="bi ${icons[type] || icons.success}"></i> ${message}`;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.2s ease';
+      setTimeout(() => toast.remove(), 200);
+    }, 3000);
+  },
+};
+window.Toast = Toast;
+
+// Spin animation for loading indicators
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+document.head.appendChild(styleSheet);
+
+// --- Initialization ---
+
+async function init() {
+  console.log('OKF Wiki initializing...');
+
+  // Initialize state
+  AppState.init();
+
+  // Update theme button icon
+  const themeIcon = document.querySelector('#btn-theme i');
+  if (themeIcon) {
+    themeIcon.className = AppState.theme === 'light' ? 'bi bi-moon-stars' : 'bi bi-sun';
+  }
+
+  // Initialize all modules
+  await Explorer.init();
+  await Editor.init();
+  Search.init();
+  Commands.init();
+  Modals.init();
+
+  // Setup keyboard shortcuts
+  setupKeyboardShortcuts();
+
+  console.log('OKF Wiki ready.');
+}
+
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Ctrl+O — Quick Open / Search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+      e.preventDefault();
+      document.getElementById('search-input').focus();
+    }
+
+    // Ctrl+N — New File
+    if ((e.ctrlKey || e.metaKey) && e.key === 'n' && !e.shiftKey) {
+      e.preventDefault();
+      Modals.showNewFile();
+    }
+
+    // Ctrl+S — Save
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      if (AppState.currentConcept) {
+        Editor.saveCurrent();
+      }
+    }
+
+    // Ctrl+B — Toggle Explorer
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      e.preventDefault();
+      AppState.showExplorer = !AppState.showExplorer;
+      document.getElementById('sidebar-explorer').classList.toggle('hidden', !AppState.showExplorer);
+    }
+
+    // Ctrl+P — Command Palette
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+      e.preventDefault();
+      Commands.show();
+    }
+
+    // Escape — Close modals
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal:not(.hidden)').forEach(m => m.classList.add('hidden'));
+      Search.clear();
+    }
+
+    // ⌘⌥E — Toggle Source/Live mode (Mac) or Ctrl+Alt+E (Windows/Linux)
+    if ((e.metaKey && e.altKey) || (e.ctrlKey && e.altKey)) {
+      if (e.key === 'e') {
+        e.preventDefault();
+        if (AppState.currentConcept) {
+          Editor.toggleMode();
+        }
+      }
+    }
+  });
+}
+
+// Handle bundle switching at app level
+const originalSetBundle = AppState.setBundle.bind(AppState);
+AppState.setBundle = function(bundleId) {
+  originalSetBundle(bundleId);
+  document.getElementById('bundle-name').textContent = bundleId || 'No bundle selected';
+  Explorer.refresh();
+  Editor.hideEditor();
+};
+
+// Start the app
+document.addEventListener('DOMContentLoaded', init);
+
+
+</script>
+</body>
+</html>

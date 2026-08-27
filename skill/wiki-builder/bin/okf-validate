@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""okf-validate — Validate an OKF bundle for conformance."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
+
+from okf.bundle import Bundle
+from okf.validator import validate_bundle
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Validate an OKF v0.2 bundle for conformance"
+    )
+    parser.add_argument(
+        "path", type=Path, nargs="?", default=None,
+        help="Bundle directory (default: current directory)"
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true",
+        help="Show all files checked"
+    )
+    args = parser.parse_args()
+
+    root = (args.path or Path.cwd()).resolve()
+    if not root.exists():
+        print(f"Error: bundle path {root} does not exist")
+        sys.exit(1)
+
+    bundle = Bundle.open_or_create(root)
+    result = validate_bundle(bundle)
+
+    # Print stats
+    stats = result.stats
+    print(f"OKF v0.2 Bundle Validation — {root}")
+    print(f"  Concepts:    {stats.get('concepts', 0)}")
+    print(f"  Index files: {stats.get('index_files', 0)}")
+    print(f"  Log files:   {stats.get('log_files', 0)}")
+    print(f"  Total .md:   {stats.get('total_md_files', 0)}")
+
+    if result.errors:
+        print(f"\n  Errors ({len(result.errors)}):")
+        for e in result.errors:
+            print(f"    ERROR: {e}")
+    else:
+        print(f"  Errors: 0")
+
+    if result.warnings:
+        print(f"  Warnings ({len(result.warnings)}):")
+        for w in result.warnings:
+            print(f"    WARN: {w}")
+    else:
+        print(f"  Warnings: 0")
+
+    if result.valid:
+        print(f"\n✓ Bundle is valid OKF v0.2!")
+    else:
+        print(f"\n✗ Bundle has {len(result.errors)} conformance error(s)")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

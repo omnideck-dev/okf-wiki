@@ -1,0 +1,439 @@
+#!/usr/bin/env python3
+"""okf-concepts — Extract higher-level concept files from source concepts.
+
+Reads source concept files from a bundle's sources/ directory, groups them
+by immediate parent folder, and generates concept files in concepts/ with
+YAML frontmatter and markdown content summarizing each group.
+
+Usage:
+    okf-concepts <bundle_path> [--force]
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+from collections import Counter
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Optional
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
+
+from okf.bundle import Bundle, open_bundle
+
+
+# ── helpers ──────────────────────────────────────────────────────────────
+
+def _extract_frontmatter_blocks(content: str) -> list[str]:
+    """Extract all YAML frontmatter blocks from content.
+
+    Each block is delimited by --- ... ---.
+    Returns list of raw frontmatter strings (without the --- delimiters).
+    """
+    blocks: list[str] = []
+    remaining = content
+    while remaining.startswith("---"):
+        end_idx = remaining.find("---", 3)
+        if end_idx == -1:
+            break
+        blocks.append(remaining[3:end_idx].strip())
+        remaining = remaining[end_idx + 3:]
+        # Skip past any whitespace/newlines to next block or body
+        remaining = remaining.lstrip()
+    return blocks
+
+
+def _get_field_from_frontmatter(frontmatter: str, field: str) -> Optional[str]:
+    """Extract a single field value from a YAML frontmatter string."""
+    for line in frontmatter.split("\n"):
+        line = line.strip()
+        if line.startswith(f"{field}:"):
+            val = line[len(field) + 1:].strip().strip('"').strip("'")
+            return val
+    return None
+
+
+def _get_list_from_frontmatter(frontmatter: str, field: str) -> list[str]:
+    """Extract a YAML list field from a frontmatter string."""
+    for line in frontmatter.split("\n"):
+        line = line.strip()
+        if line.startswith(f"{field}:"):
+            val = line[len(field) + 1:].strip()
+            if val.startswith("[") and val.endswith("]"):
+                items = [x.strip().strip('"').strip("'") for x in val[1:-1].split(",")]
+                return [x for x in items if x]
+            return [val]
+    return []
+
+
+def _get_original_description(content: str) -> str:
+    """Get the meaningful description from a source file.
+
+    Source files have two frontmatter blocks:
+    1. OKF importer wrapper (has 'imported from' descriptions)
+    2. Original source frontmatter (has real descriptions)
+
+    We try the second block first, fall back to the first.
+    """
+    blocks = _extract_frontmatter_blocks(content)
+
+    # Try each block in reverse order (original source is usually last)
+    for block in reversed(blocks):
+        desc = _get_field_from_frontmatter(block, "description")
+        if desc and "imported from" not in desc.lower():
+            return desc
+
+    # Fall back to any description
+    for block in blocks:
+        desc = _get_field_from_frontmatter(block, "description")
+        if desc:
+            return desc
+
+    return ""
+
+
+def _get_original_title(content: str) -> Optional[str]:
+    """Get the meaningful title from a source file.
+
+    Prefers the original source title over the OKF wrapper title.
+    """
+    blocks = _extract_frontmatter_blocks(content)
+
+    for block in reversed(blocks):
+        title = _get_field_from_frontmatter(block, "title")
+        if title and title.lower() not in ("index",):
+            return title
+
+    for block in blocks:
+        title = _get_field_from_frontmatter(block, "title")
+        if title:
+            return title
+
+    return None
+
+
+def _get_original_tags(content: str) -> list[str]:
+    """Get tags from a source file, preferring original source."""
+    blocks = _extract_frontmatter_blocks(content)
+
+    for block in reversed(blocks):
+        tags = _get_list_from_frontmatter(block, "tags")
+        if tags:
+            return tags
+
+    return []
+
+
+def _get_first_paragraph(content: str, max_chars: int = 500) -> str:
+    """Extract the first meaningful paragraph after all frontmatter blocks."""
+    body = content
+
+    # Strip all frontmatter blocks
+    while body.startswith("---"):
+        end_idx = body.find("---", 3)
+        if end_idx == -1:
+            break
+        body = body[end_idx + 3:].lstrip()
+
+    # Remove HTML/Jinja/Liquid tags for cleaner text
+    body = re.sub(r"\{%.*?%\}", "", body)
+    body = re.sub(r"\{\{.*?\}\}", "", body)
+    body = re.sub(r"<[^>]+>", "", body)
+
+    # Find first paragraph
+    lines = body.split("\n")
+    para_lines: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            if para_lines:
+                break
+            continue
+        # Skip headings
+        if stripped.startswith("#"):
+            if para_lines:
+                break
+            continue
+        # Skip horizontal rules
+        if stripped.startswith("---") or stripped.startswith("***"):
+            continue
+        para_lines.append(stripped)
+
+    text = " ".join(para_lines).strip()
+    if len(text) > max_chars:
+        text = text[:max_chars].rsplit(" ", 1)[0] + "..."
+    return text
+
+
+def _folder_to_title(folder_name: str) -> str:
+    """Convert a folder name like 'haproxy-fusion' to 'HAProxy Fusion — Overview'."""
+    parts = folder_name.replace("-", " ").split()
+    titled = []
+    for p in parts:
+        p_lower = p.lower()
+        if p_lower in ("haproxy",):
+            titled.append("HAProxy")
+        elif p_lower in (
+            "api", "sso", "waf", "lb", "gpe", "oidc", "saml", "udp",
+            "rbac", "crs", "naxsi", "ipam", "cel", "jwt", "pkce", "xxe",
+            "xsd", "ui", "dns", "ntp", "vrrp",
+        ):
+            titled.append(p.upper())
+        else:
+            titled.append(p.capitalize())
+    return " ".join(titled) + " — Overview"
+
+
+def _folder_to_tags(folder_name: str) -> list[str]:
+    """Generate tags from a folder name."""
+    tags = [folder_name]
+    parts = folder_name.replace("-", " ").split()
+    for p in parts:
+        p_lower = p.lower()
+        if p_lower in (
+            "haproxy", "enterprise", "fusion", "aloha", "edge",
+            "kubernetes", "ingress", "bot", "management", "security",
+            "waf", "firewall", "web", "application", "data", "plane",
+            "runtime", "lua", "configuration", "tutorial", "legal",
+            "search", "gateway", "unified", "api",
+        ):
+            tags.append(p_lower)
+    return sorted(set(tags))
+
+
+def _build_related_groups(folder_name: str, all_folders: list[str]) -> list[str]:
+    """Find related concept groups by name similarity."""
+    related: list[str] = []
+    name_lower = folder_name.lower()
+
+    for other in all_folders:
+        if other == folder_name:
+            continue
+        other_lower = other.lower()
+
+        # Direct substring match
+        if name_lower in other_lower or other_lower in name_lower:
+            related.append(other)
+            continue
+
+        # Shared significant words
+        name_words = set(name_lower.replace("-", " ").split())
+        other_words = set(other_lower.replace("-", " ").split())
+        generic = {"haproxy", "api", "data", "plane", "configuration", "tutorial"}
+        significant = (name_words & other_words) - generic
+        if len(significant) >= 1:
+            related.append(other)
+
+    return sorted(set(related))
+
+
+# ── main ─────────────────────────────────────────────────────────────────
+
+def extract_concepts(bundle: Bundle, force: bool = False) -> list[Path]:
+    """Extract higher-level concept files from source concepts.
+
+    Returns list of concept files written.
+    """
+    sources_dir = bundle.root / "sources"
+    if not sources_dir.exists():
+        print(f"Error: sources/ directory not found in {bundle.root}")
+        sys.exit(1)
+
+    # Collect all source folders (immediate children of sources/)
+    source_folders: list[Path] = sorted(
+        d for d in sources_dir.iterdir() if d.is_dir() and not d.name.startswith(".")
+    )
+
+    if not source_folders:
+        print(f"Error: no source folders found in {sources_dir}")
+        sys.exit(1)
+
+    all_folder_names = [d.name for d in source_folders]
+    concepts_dir = bundle.ensure_dir("concepts")
+    written: list[Path] = []
+
+    print(f"Found {len(source_folders)} source folders:")
+    for sf in source_folders:
+        print(f"  {sf.name}/")
+
+    print(f"\nGenerating concept files...")
+
+    for folder in source_folders:
+        folder_name = folder.name
+        title = _folder_to_title(folder_name)
+        tags = _folder_to_tags(folder_name)
+        related = _build_related_groups(folder_name, all_folder_names)
+
+        # Collect all .md files in this folder (recursively)
+        md_files = sorted(folder.rglob("*.md"))
+        # Filter out index.md and reserved files
+        concept_files = [f for f in md_files if f.name not in ("index.md", "log.md")]
+
+        if not concept_files:
+            print(f"  ⚠ {folder_name}/ — no concept files found, skipping")
+            continue
+
+        # Extract info from source files
+        source_entries: list[dict[str, str]] = []
+        all_tags: set[str] = set(tags)
+        all_descriptions: list[str] = []
+        all_snippets: list[str] = []
+
+        for cf in concept_files:
+            try:
+                content = cf.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                continue
+
+            # Get relative path for linking
+            try:
+                rel_path = cf.relative_to(bundle.root)
+            except ValueError:
+                rel_path = cf
+
+            cf_title = _get_original_title(content) or cf.stem.replace("-", " ").title()
+            cf_desc = _get_original_description(content)
+            cf_tags = _get_original_tags(content)
+            all_tags.update(cf_tags)
+
+            # Get first paragraph for summary
+            first_para = _get_first_paragraph(content, max_chars=300)
+
+            source_entries.append({
+                "title": cf_title,
+                "description": cf_desc,
+                "path": str(rel_path),
+                "snippet": first_para,
+            })
+
+            if cf_desc:
+                all_descriptions.append(cf_desc)
+            if first_para:
+                all_snippets.append(first_para)
+
+        if not source_entries:
+            print(f"  ⚠ {folder_name}/ — no readable source files, skipping")
+            continue
+
+        # Build description from original source descriptions
+        if all_descriptions:
+            # Deduplicate while preserving order
+            unique_descs = list(dict.fromkeys(all_descriptions))
+            desc = unique_descs[0]
+            if len(unique_descs) > 1:
+                # Use the most common theme
+                from collections import Counter
+                word_freq: Counter = Counter()
+                for d in unique_descs:
+                    for w in d.lower().split():
+                        if len(w) > 3:
+                            word_freq[w] += 1
+                # Pick the description with the most common significant words
+                best_desc = max(unique_descs, key=lambda d: sum(1 for w in d.lower().split() if word_freq.get(w, 0) > 1))
+                desc = best_desc
+        else:
+            desc = f"Documentation for {title.replace(' — Overview', '')}"
+
+        # Truncate description
+        if len(desc) > 300:
+            desc = desc[:297] + "..."
+
+        # Build summary content
+        summary_parts: list[str] = []
+        summary_parts.append(f"# {title}\n")
+        summary_parts.append(f"\n> {desc}\n")
+
+        # Add overview from source snippets
+        if all_snippets:
+            informative = [s for s in all_snippets if len(s) > 60]
+            if informative:
+                best = max(informative, key=len)
+                summary_parts.append(f"\n{best}\n")
+
+        # Key Topics section
+        summary_parts.append(f"\n## Key Topics\n")
+        for entry in source_entries:
+            link_path = entry["path"]
+            entry_desc = entry["description"][:120] if entry["description"] else "Documentation"
+            summary_parts.append(f"\n- **{entry['title']}** — {entry_desc}")
+            summary_parts.append(f"  - Source: [[{link_path}]]")
+
+        # Related Concepts section
+        if related:
+            summary_parts.append(f"\n## Related Concepts\n")
+            for rel_name in related:
+                rel_title = _folder_to_title(rel_name)
+                summary_parts.append(f"\n- [[{rel_title}]]")
+
+        # Source count
+        summary_parts.append(f"\n---\n")
+        summary_parts.append(f"\n*This concept was generated from {len(source_entries)} source file(s) in `sources/{folder_name}/`.*\n")
+
+        # Generate frontmatter
+        now = datetime.now(timezone.utc)
+        tags_str = ", ".join(f'"{t}"' for t in sorted(all_tags))
+        concept_of_str = f'"product-documentation/sources/{folder_name}/"'
+
+        frontmatter = (
+            "---\n"
+            f'type: Concept\n'
+            f'title: "{title}"\n'
+            f'description: "{desc}"\n'
+            f"tags: [{tags_str}]\n"
+            f"concept_of: [{concept_of_str}]\n"
+            f"generated:\n"
+            f"  by: okf-concepts/1.0\n"
+            f"  at: {now.isoformat()}\n"
+            f"status: draft\n"
+            "---\n"
+        )
+
+        # Write concept file
+        concept_dir = concepts_dir / folder_name
+        concept_dir.mkdir(parents=True, exist_ok=True)
+        concept_path = concept_dir / "index.md"
+
+        if concept_path.exists() and not force:
+            print(f"  ⚠ {folder_name}/index.md — exists, use --force to overwrite")
+            continue
+
+        concept_path.write_text(frontmatter + "\n".join(summary_parts), encoding="utf-8")
+        written.append(concept_path)
+        print(f"  ✓ {folder_name}/index.md — {len(source_entries)} source files → concept")
+
+    return written
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Extract higher-level concept files from source concepts"
+    )
+    parser.add_argument(
+        "bundle_path", type=Path,
+        help="Path to the OKF knowledge bundle"
+    )
+    parser.add_argument(
+        "--force", "-f", action="store_true",
+        help="Overwrite existing concept files"
+    )
+    args = parser.parse_args()
+
+    bundle_path = args.bundle_path.resolve()
+    if not bundle_path.exists():
+        print(f"Error: bundle path {bundle_path} does not exist")
+        sys.exit(1)
+
+    bundle = open_bundle(bundle_path)
+    written = extract_concepts(bundle, force=args.force)
+
+    print(f"\n{'='*50}")
+    print(f"Concept extraction complete!")
+    print(f"  Bundle:     {bundle_path}")
+    print(f"  Created:    {len(written)} concept file(s)")
+    print(f"{'='*50}")
+
+
+if __name__ == "__main__":
+    main()

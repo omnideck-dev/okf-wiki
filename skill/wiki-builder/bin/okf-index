@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""okf-index — Regenerate index.md files for an OKF bundle."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
+
+from okf.bundle import Bundle
+from okf.indexer import generate_index
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Regenerate index.md files for an OKF bundle"
+    )
+    parser.add_argument(
+        "path", type=Path, nargs="?", default=None,
+        help="Bundle directory (default: current directory)"
+    )
+    parser.add_argument(
+        "--subdir", "-s", type=str, default="",
+        help="Only regenerate indexes within this subdirectory"
+    )
+    parser.add_argument(
+        "--validate", action="store_true",
+        help="Also validate the bundle after indexing"
+    )
+    args = parser.parse_args()
+
+    root = (args.path or Path.cwd()).resolve()
+    if not root.exists():
+        print(f"Error: bundle path {root} does not exist")
+        sys.exit(1)
+
+    # Check if it looks like a bundle
+    bundle = Bundle.open_or_create(root)
+
+    indices = generate_index(bundle, subdir=args.subdir)
+
+    if indices:
+        print(f"Generated/updated {len(indices)} index.md file(s):")
+        for idx in indices:
+            rel = idx.relative_to(bundle.root)
+            entries = len([l for l in idx.read_text().split("\n") if l.startswith("* [")])
+            print(f"  {rel} ({entries} entries)")
+    else:
+        print("No index.md files generated (no concepts found)")
+
+    if args.validate:
+        from okf.validator import validate_bundle
+        result = validate_bundle(bundle)
+        if result.valid:
+            print(f"\nBundle is valid OKF v0.2 conformat!")
+        else:
+            print(f"\nBundle validation found {len(result.errors)} error(s):")
+            for e in result.errors:
+                print(f"  ERROR: {e}")
+        if result.warnings:
+            print(f"\n{len(result.warnings)} warning(s):")
+            for w in result.warnings:
+                print(f"  WARN: {w}")
+
+
+if __name__ == "__main__":
+    main()

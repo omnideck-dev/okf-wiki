@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""okf-list — List all registered OKF bundles."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
+
+from okf.registry import Registry, refresh_registry
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="List all registered OKF bundles"
+    )
+    parser.add_argument(
+        "--json", action="store_true",
+        help="Output JSON array of bundle info"
+    )
+    parser.add_argument(
+        "--refresh", action="store_true",
+        help="Force rescan of ~/wiki/ before listing"
+    )
+    args = parser.parse_args()
+
+    if args.refresh:
+        reg = refresh_registry()
+    else:
+        reg = Registry.load()
+
+    bundles = reg.list_bundles()
+
+    if not bundles:
+        if args.json:
+            print("[]")
+        else:
+            print("No OKF bundles found.")
+            print("Create one with: okf-bundle <path> --project <name>")
+            print("Or import from a source: okf-update <source> --name <name>")
+        return
+
+    if args.json:
+        data = [
+            {
+                "path": b.path,
+                "project": b.project,
+                "slug": b.slug,
+                "created": b.created,
+                "last_updated": b.last_updated,
+                "concept_count": b.concept_count,
+            }
+            for b in bundles
+        ]
+        json.dump(data, sys.stdout, indent=2, default=str)
+        print()
+        return
+
+    # Human-readable table
+    header = f"{'PATH':<50} {'PROJECT':<25} {'CONCEPTS':<10} {'UPDATED':<20}"
+    sep = "-" * len(header)
+    print(header)
+    print(sep)
+    for b in bundles:
+        path_short = b.path
+        if path_short.startswith(str(Path.home())):
+            path_short = "~" + path_short[len(str(Path.home())):]
+        updated = b.last_updated[:10] if b.last_updated else "—"
+        print(f"{path_short:<50} {b.project:<25} {b.concept_count:<10} {updated:<20}")
+    print(sep)
+    print(f"Total: {len(bundles)} bundle(s)")
+
+
+if __name__ == "__main__":
+    main()

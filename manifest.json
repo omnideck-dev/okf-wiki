@@ -1,0 +1,36 @@
+{
+  "format_version": "1.0",
+  "title": "OKF Wiki",
+  "short_description": "Full OKF wiki ecosystem \u2014 build wikis from source datasets (wiki-builder skill), browse/edit/search/visualize them (okf-wiki app), curated by a dedicated wiki-curator agent profile.",
+  "long_description": "OKF Wiki pack gives you everything you need to create, maintain, and explore Open Knowledge Format (OKF) v0.2 knowledge bundles:\n\n**wiki-builder skill** \u2014 8 deterministic CLI tools for generating wikis from source code, documentation, or any document collection. Tools: okf-list, okf-bundle, okf-update, okf-import, okf-index, okf-validate, okf-concepts, okf-crosslink.\n\n**okf-wiki app** \u2014 A full web UI for browsing wiki bundles, editing concept pages (frontmatter + body), searching across concepts, viewing backlinks, exploring the knowledge graph, validation, templates, import/export.\n\n**wiki-curator agent profile** \u2014 An agent that combines the skill and app awareness. Can build wikis from sources, validate them, enrich with LLM-generated descriptions and cross-links, and browse the results.\n\nAll components read/write the same ~/wiki/ directory \u2014 build a bundle with the CLI tools, then browse it instantly in the web app.",
+  "created": "2026-08-27T22:54:56.879651+00:00",
+  "updated": "2026-08-27T22:56:45.744395+00:00",
+  "version": "1.0.0",
+  "author": "Omnideck",
+  "items": {
+    "app": [
+      {
+        "slug": "okf-wiki",
+        "added": "2026-08-27T22:55:00.510930+00:00",
+        "source": "/home/omnideck/apps/okf-wiki",
+        "type": "app"
+      }
+    ],
+    "skill": [
+      {
+        "slug": "wiki-builder",
+        "added": "2026-08-27T22:55:00.528897+00:00",
+        "source": "/home/omnideck/skills/wiki-builder/wiki-builder-skill",
+        "type": "skill"
+      }
+    ],
+    "profile": [
+      {
+        "slug": "wiki-curator",
+        "added": "2026-08-27T22:55:00.528910+00:00",
+        "source": "profile/wiki-curator",
+        "type": "profile"
+      }
+    ]
+  }
+}
