@@ -60,12 +60,6 @@ cd ~/packs/okf-wiki
 bash install.sh
 ```
 
-Or use the pack CLI:
-
-```bash
-pack-install ~/packs/okf-wiki --name okf-wiki
-```
-
 ## Quick Start
 
 ```bash
