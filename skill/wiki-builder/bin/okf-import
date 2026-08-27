@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""okf-import — Import source files into an OKF knowledge bundle."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
+
+from okf.bundle import Bundle
+from okf.source import SourceTree, scan_changed_files
+from okf.importer import import_all
+from okf.indexer import generate_log_entry
+from okf.registry import Registry
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Import source files into an OKF bundle"
+    )
+    parser.add_argument(
+        "source", type=Path, help="Source directory or repo to import from"
+    )
+    parser.add_argument(
+        "--bundle", "-b", type=Path, default=None,
+        help="Bundle directory (default: ~/wiki/<project_name>)"
+    )
+    parser.add_argument(
+        "--name", "-n", type=str, default=None,
+        help="Project name (default: source directory name)"
+    )
+    parser.add_argument(
+        "--match", action="store_true",
+        help="Auto-select bundle by matching project name in registry"
+    )
+    parser.add_argument(
+        "--subdir", "-s", type=str, default="sources",
+        help="Subdirectory within bundle (default: sources)"
+    )
+    parser.add_argument(
+        "--all", "-a", action="store_true",
+        help="Re-import all files (ignore change detection)"
+    )
+    parser.add_argument(
+        "--method", choices=["auto", "mtime", "git"], default="auto",
+        help="Change detection method (default: auto)"
+    )
+    parser.add_argument(
+        "--force", "-f", action="store_true",
+        help="Overwrite existing concept files"
+    )
+    args = parser.parse_args()
+
+    source_root = args.source.resolve()
+    if not source_root.exists():
+        print(f"Error: source path {source_root} does not exist")
+        sys.exit(1)
+
+    project_name = args.name or source_root.name
+
+    # Determine bundle path
+    if args.bundle:
+        bundle_root = args.bundle.resolve()
+    elif args.match:
+        reg = Registry.load()
+        matches = reg.find_all(project_name)
+        if len(matches) == 0:
+            bundle_root = Path.home() / "wiki" / project_name
+            print(f"No matching bundle found. Will create new bundle at {bundle_root}")
+        elif len(matches) == 1:
+            bundle_root = Path(matches[0].path)
+            project_name = matches[0].project  # Preserve the bundle's original project name
+            print(f"Found matching bundle: {project_name} at {bundle_root}")
+        else:
+            print(f"Multiple bundles match '{project_name}':")
+            for i, m in enumerate(matches, 1):
+                print(f"  {i}. {m.project} — {m.path}")
+            print("Use --bundle to specify which one, or --name to narrow the match.")
+            sys.exit(2)
+    else:
+        bundle_root = Path.home() / "wiki" / project_name
+
+    # Open or create bundle
+    bundle = Bundle.open_or_create(bundle_root)
+
+    # Set up source tree
+    source = SourceTree.from_path(source_root, name=project_name)
+
+    # Determine change detection
+    if args.all:
+        from okf.source import FileInfo
+        source.walk()
+        changed_files = source.files
+        deleted_paths: list[str] = []
+    else:
+        last_commit = None
+        if args.method == "git" or (args.method == "auto" and source.is_git_repo):
+            last_commit = source.find_last_commit()
+
+        changed_files, deleted_paths = scan_changed_files(
+            source,
+            bundle.manifest.data,
+            method=args.method,
+            last_commit=last_commit,
+        )
+
+        if not changed_files and not deleted_paths:
+            print(f"No changes detected. All {len(bundle.manifest.data)} files up to date.")
+            bundle.save_manifest()
+
+            # Register/update bundle in registry
+            reg = Registry.load()
+            reg.register(str(bundle_root), project_name)
+            reg.save()
+            return
+
+    # Import changed files
+    print(f"Scanning {source_root} ...")
+    print(f"  Found {len(source.files) if args.all else len(changed_files)} file(s) to process")
+
+    created, updated = import_all(changed_files, bundle, source, subdir=args.subdir)
+
+    # Handle deleted files — remove from manifest
+    deleted_concepts: list[str] = []
+    for del_path in deleted_paths:
+        prev = bundle.manifest.data.get(str(Path(del_path).resolve()))
+        if prev:
+            concept = Path(prev["concept_path"])
+            if concept.exists() and args.force:
+                concept.unlink()
+                deleted_concepts.append(str(concept.relative_to(bundle.root)))
+            bundle.manifest.remove(Path(del_path))
+
+    # Save manifest
+    bundle.save_manifest()
+
+    # Generate index
+    from okf.indexer import generate_index
+    indices = generate_index(bundle, subdir=args.subdir)
+
+    # Log entry
+    create_list = [f"sources/{fi.rel_path}" for fi in changed_files[:5]]
+    update_list = [f"sources/{fi.rel_path}" for fi in changed_files[:5]]
+
+    generate_log_entry(
+        bundle,
+        "Import",
+        f"Imported {created + updated} file(s) from {project_name}",
+        created=[f"sources/{fi.rel_path}" for fi in changed_files[:created]] if created else [],
+        updated=[f"sources/{fi.rel_path}" for fi in changed_files[created:]] if updated else [],
+        deleted=deleted_concepts,
+    )
+
+    print(f"\nDone!")
+    print(f"  Created: {created} concept(s)")
+    print(f"  Updated: {updated} concept(s)")
+    print(f"  Deleted: {len(deleted_concepts)} concept(s)")
+    print(f"  Indexes: {len(indices)} index.md file(s)")
+    print(f"  Bundle: {bundle_root}")
+
+    # Register/update bundle in registry
+    reg = Registry.load()
+    reg.register(str(bundle_root), project_name)
+    reg.save()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,589 @@
+#!/usr/bin/env python3
+"""okf-crosslink — Add cross-links between two OKF knowledge bundles.
+
+Scans concept groups (folders) in both bundles, matches related groups by
+name similarity, and adds related_concepts to the frontmatter of concept
+files in both directions. Also generates a references/ file in both bundles
+documenting the cross-links.
+
+Usage:
+    okf-crosslink <bundle_a> <bundle_b> [--dry-run]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Optional
+
+sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
+
+from okf.bundle import Bundle, open_bundle
+
+
+# ── helpers ──────────────────────────────────────────────────────────────
+
+def _read_frontmatter(content: str) -> Optional[dict[str, str]]:
+    """Parse YAML frontmatter into a simple dict of string values.
+
+    Handles flat key: value pairs and simple lists like tags: [a, b].
+    Does NOT use a full YAML parser — this is a simplified extractor.
+    """
+    if not content.startswith("---"):
+        return None
+    end_idx = content.find("---", 3)
+    if end_idx == -1:
+        return None
+    frontmatter = content[3:end_idx].strip()
+    result: dict[str, str] = {}
+    for line in frontmatter.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        if ":" in line:
+            key, _, val = line.partition(":")
+            key = key.strip()
+            val = val.strip()
+            result[key] = val
+    return result
+
+
+def _get_field(content: str, field: str) -> Optional[str]:
+    """Extract a single field value from YAML frontmatter."""
+    fm = _read_frontmatter(content)
+    if fm and field in fm:
+        return fm[field].strip('"').strip("'")
+    return None
+
+
+def _get_list_field(content: str, field: str) -> list[str]:
+    """Extract a YAML list field value."""
+    val = _get_field(content, field)
+    if not val:
+        return []
+    if val.startswith("[") and val.endswith("]"):
+        items = [x.strip().strip('"').strip("'") for x in val[1:-1].split(",")]
+        return [x for x in items if x]
+    return [val]
+
+
+def _folder_to_title(folder_name: str) -> str:
+    """Convert a folder name like 'haproxy-fusion' to 'HAProxy Fusion — Overview'."""
+    parts = folder_name.replace("-", " ").split()
+    titled = []
+    for p in parts:
+        p_lower = p.lower()
+        if p_lower in ("haproxy",):
+            titled.append("HAProxy")
+        elif p_lower in (
+            "api", "sso", "waf", "lb", "gpe", "oidc", "saml", "udp",
+            "rbac", "crs", "naxsi", "ipam", "cel", "jwt", "pkce", "xxe",
+            "xsd", "ui", "dns", "ntp", "vrrp",
+        ):
+            titled.append(p.upper())
+        else:
+            titled.append(p.capitalize())
+    return " ".join(titled) + " — Overview"
+
+
+def _normalize_name(name: str) -> str:
+    """Normalize a folder name for comparison."""
+    return name.lower().replace("-", " ").replace("_", " ").strip()
+
+
+def _match_groups(
+    folders_a: list[str],
+    folders_b: list[str],
+) -> list[tuple[str, str, float]]:
+    """Match folder groups between two bundles by name similarity.
+
+    Returns list of (folder_a, folder_b, score) tuples for matches.
+    """
+    # Manual mappings for known cross-bundle relationships
+    # (codewiki_group, product_docs_group)
+    manual_mappings: list[tuple[str, str]] = [
+        # WAF
+        ("waf", "web-application-firewall"),
+        ("intelligent-waf-engine", "web-application-firewall"),
+        ("owasp-crs-integration", "web-application-firewall"),
+        ("naxsi-rule-language", "web-application-firewall"),
+        # OIDC SSO (part of haproxy-enterprise docs)
+        ("oidc-sso", "haproxy-enterprise"),
+        ("oidc-authorization-code-flow", "haproxy-enterprise"),
+        ("oidc-client-authentication-methods", "haproxy-enterprise"),
+        ("oidc-discovery-and-jwks", "haproxy-enterprise"),
+        ("oidc-logout-flow", "haproxy-enterprise"),
+        ("oidc-stateless-session-management", "haproxy-enterprise"),
+        ("oidc-token-validation", "haproxy-enterprise"),
+        # SAML SSO (part of haproxy-enterprise docs)
+        ("saml-sso", "haproxy-enterprise"),
+        ("saml-assertion-encryption", "haproxy-enterprise"),
+        ("saml-cookie-and-session-model", "haproxy-enterprise"),
+        ("saml-login-flow", "haproxy-enterprise"),
+        ("saml-logout-and-single-logout", "haproxy-enterprise"),
+        ("saml-signature-verification", "haproxy-enterprise"),
+        ("saml-xsd-validation-and-xxe-hardening", "haproxy-enterprise"),
+        # UDP LB (part of haproxy-enterprise docs)
+        ("udp-load-balancing", "haproxy-enterprise"),
+        ("udp-datagram-processing-engine", "haproxy-enterprise"),
+        ("udp-health-checking", "haproxy-enterprise"),
+        ("udp-lb-logging", "haproxy-enterprise"),
+        ("udp-session-model-and-stickiness", "haproxy-enterprise"),
+        ("udp-transparent-proxying", "haproxy-enterprise"),
+        # GPE (part of haproxy-enterprise docs)
+        ("global-profiling-engine", "haproxy-enterprise"),
+        ("gpe-logging", "haproxy-enterprise"),
+        ("gpe-on-disk-persistence", "haproxy-enterprise"),
+        ("gpe-stat-key-format", "haproxy-enterprise"),
+        ("gpe-toplists", "haproxy-enterprise"),
+        ("gpe-worker-architecture", "haproxy-enterprise"),
+        ("historical-stick-table-aggregation", "haproxy-enterprise"),
+        ("multi-level-aggregation", "haproxy-enterprise"),
+        ("real-time-stick-table-aggregation", "haproxy-enterprise"),
+        ("stat-buckets-and-retention", "haproxy-enterprise"),
+        ("periodic-puller", "haproxy-enterprise"),
+        # Bot management (more granular CodeWiki concepts → product docs group)
+        ("botmgmt-data-file-updates", "bot-management"),
+        ("botmgmt-fingerprinting-signals", "bot-management"),
+        ("botmgmt-threat-detection", "bot-management"),
+        ("botmgmt-tracking", "bot-management"),
+        ("verified-bots-and-crawlers", "bot-management"),
+        # Service discovery (part of haproxy-fusion)
+        ("service-discovery", "haproxy-fusion"),
+        ("service-discovery-api", "haproxy-fusion"),
+        ("service-discovery-debugging", "haproxy-fusion"),
+        ("service-discovery-transformers", "haproxy-fusion"),
+        ("service-nodes", "haproxy-fusion"),
+        ("consul-service-discovery", "haproxy-fusion"),
+        ("kubernetes-service-discovery", "kubernetes-ingress"),
+        ("source-combiner", "haproxy-fusion"),
+        ("config-batching", "haproxy-fusion"),
+        # Fusion-specific
+        ("fusion-automation-ecosystem", "haproxy-fusion"),
+        ("fusion-blueprints-and-autogenerate", "haproxy-fusion"),
+        ("fusion-security-profiles", "haproxy-fusion"),
+        ("fusion-stick-table-viewer", "haproxy-fusion"),
+        ("fusion-transaction-model", "haproxy-fusion"),
+        ("fusion-waf-ruleset-management", "haproxy-fusion"),
+        ("dynamic-update-sections", "haproxy-fusion"),
+        # API / data plane
+        ("api-first-design", "haproxy-fusion-api"),
+        ("ipam", "haproxy-fusion"),
+        # CEL Expressions (Fusion feature)
+        ("cel-expressions", "haproxy-fusion"),
+        ("customcore-rules", "haproxy-fusion"),
+    ]
+
+    matches: list[tuple[str, str, float]] = []
+
+    # First, check manual mappings
+    for fa, fb in manual_mappings:
+        if fa in folders_a and fb in folders_b:
+            # Avoid duplicates
+            if not any(m[0] == fa and m[1] == fb for m in matches):
+                matches.append((fa, fb, 1.0))
+
+    # Then, do automatic matching for remaining groups
+    matched_a = {m[0] for m in matches}
+    matched_b = {m[1] for m in matches}
+
+    for fa in folders_a:
+        if fa in matched_a:
+            continue
+        na = _normalize_name(fa)
+        best_match: Optional[str] = None
+        best_score = 0.0
+
+        for fb in folders_b:
+            if fb in matched_b:
+                continue
+            nb = _normalize_name(fb)
+
+            # Exact match
+            if na == nb:
+                best_match = fb
+                best_score = 1.0
+                break
+
+            # One contains the other
+            if na in nb or nb in na:
+                score = min(len(na), len(nb)) / max(len(na), len(nb))
+                if score > best_score:
+                    best_match = fb
+                    best_score = score
+                continue
+
+            # Shared significant words
+            words_a = set(na.split())
+            words_b = set(nb.split())
+            generic = {"haproxy", "api", "data", "plane", "configuration",
+                       "tutorial", "documentation", "overview", "index",
+                       "reference", "guide", "module", "service"}
+            significant_a = words_a - generic
+            significant_b = words_b - generic
+            common = significant_a & significant_b
+
+            if common:
+                score = len(common) / max(len(significant_a | significant_b), 1)
+                if score > best_score:
+                    best_match = fb
+                    best_score = score
+
+        if best_match and best_score >= 0.3:
+            matches.append((fa, best_match, best_score))
+            matched_a.add(fa)
+            matched_b.add(best_match)
+
+    return matches
+
+
+def _update_frontmatter_field(
+    content: str,
+    field: str,
+    value: str,
+) -> str:
+    """Add or update a field in YAML frontmatter.
+
+    If the field already exists, its value is replaced.
+    If not, it's added before the closing ---.
+    """
+    if not content.startswith("---"):
+        return content
+
+    end_idx = content.find("---", 3)
+    if end_idx == -1:
+        return content
+
+    frontmatter = content[3:end_idx]
+    body = content[end_idx:]
+
+    lines = frontmatter.split("\n")
+    new_lines: list[str] = []
+    found = False
+
+    for line in lines:
+        if line.strip().startswith(f"{field}:"):
+            new_lines.append(f"{field}: {value}")
+            found = True
+        else:
+            new_lines.append(line)
+
+    if not found:
+        # Insert before the last line (which should be empty or closing)
+        # Actually, insert before the closing --- marker
+        # The frontmatter ends at end_idx, so we add to the frontmatter
+        new_lines.append(f"{field}: {value}")
+
+    new_frontmatter = "\n".join(new_lines)
+    return "---" + new_frontmatter + body
+
+
+def _add_to_list_field(content: str, field: str, item: str) -> str:
+    """Add an item to a YAML list field in frontmatter.
+
+    Handles both [a, b] format and simple value format.
+    """
+    if not content.startswith("---"):
+        return content
+
+    # Find the second --- which closes frontmatter
+    end_idx = content.find("---", 3)
+    if end_idx == -1:
+        return content
+
+    frontmatter = content[3:end_idx].strip()
+    body = content[end_idx + 3:]  # After closing ---
+
+    lines = frontmatter.split("\n")
+    new_lines: list[str] = []
+    found = False
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith(f"{field}:"):
+            val = stripped[len(field) + 1:].strip()
+            if val.startswith("[") and val.endswith("]"):
+                # Parse existing list
+                items = [x.strip().strip('"').strip("'") for x in val[1:-1].split(",")]
+                items = [x for x in items if x]
+                if item not in items:
+                    items.append(item)
+                new_val = "[" + ", ".join(f'"{x}"' for x in items) + "]"
+                new_lines.append(f"{field}: {new_val}")
+            else:
+                # Convert to list
+                if val and val != item:
+                    new_lines.append(f'{field}: ["{val}", "{item}"]')
+                else:
+                    new_lines.append(f'{field}: ["{item}"]')
+            found = True
+        else:
+            new_lines.append(line)
+
+    if not found:
+        new_lines.append(f'{field}: ["{item}"]')
+
+    new_frontmatter = "\n".join(new_lines)
+    return "---\n" + new_frontmatter + "\n---" + body
+
+
+def _filename_to_group(stem: str) -> str:
+    """Extract a group name from a concept filename.
+
+    Handles patterns like:
+    - "Bot Management Overview" -> "bot-management"
+    - "WAF Overview" -> "waf"
+    - "OIDC SSO Overview" -> "oidc-sso"
+    - "Fusion Automation Ecosystem" -> "fusion"
+    - "UDP Load Balancing Overview" -> "udp-load-balancing"
+    - "Global Profiling Engine Overview" -> "global-profiling-engine"
+    """
+    # Remove common suffixes
+    name = stem
+    for suffix in [" Overview", " Overviews", " Summary", " Introduction"]:
+        if name.endswith(suffix):
+            name = name[: -len(suffix)]
+            break
+
+    # Convert to kebab-case
+    words = name.split()
+    result = []
+    for w in words:
+        w_lower = w.lower()
+        if w_lower in ("haproxy",):
+            result.append("haproxy")
+        elif w_lower in ("api", "sso", "waf", "lb", "gpe", "oidc", "saml", "udp", "crs", "naxsi", "ipam", "cel", "jwt", "pkce"):
+            result.append(w_lower)
+        else:
+            result.append(w_lower)
+    return "-".join(result)
+
+
+# ── main ─────────────────────────────────────────────────────────────────
+
+def crosslink_bundles(
+    bundle_a: Bundle,
+    bundle_b: Bundle,
+    dry_run: bool = False,
+) -> None:
+    """Add cross-links between two bundles.
+
+    Scans concept groups in both bundles, matches related groups,
+    and adds related_concepts references bidirectionally.
+    """
+    name_a = bundle_a.root.name
+    name_b = bundle_b.root.name
+
+    # Collect concept groups (folders) from both bundles
+    def get_concept_groups(bundle: Bundle) -> dict[str, list[Path]]:
+        """Get concept groups: group_name -> [concept files].
+
+        Handles both styles:
+        - Subdirectory groups: concepts/<group>/index.md (product docs)
+        - Flat structure: concepts/<topic> Overview.md etc. (CodeWiki)
+        """
+        groups: dict[str, list[Path]] = {}
+
+        # Check concepts/ directory
+        concepts_dir = bundle.root / "concepts"
+        if concepts_dir.exists():
+            for entry in sorted(concepts_dir.iterdir()):
+                if entry.is_dir() and not entry.name.startswith("."):
+                    # Subdirectory group
+                    md_files = sorted(entry.rglob("*.md"))
+                    concept_files = [f for f in md_files if f.suffix == ".md"]
+                    if concept_files:
+                        groups[entry.name] = concept_files
+                elif entry.is_file() and entry.suffix == ".md" and entry.name not in ("index.md", "log.md"):
+                    # Flat concept file — extract topic from filename
+                    stem = entry.stem
+                    # Try to extract a group name from the filename
+                    # e.g., "Bot Management Overview.md" -> "bot-management"
+                    # e.g., "WAF Overview.md" -> "waf"
+                    group_name = _filename_to_group(stem)
+                    groups.setdefault(group_name, []).append(entry)
+
+        # Also check sources/ directories for additional groups
+        sources_dir = bundle.root / "sources"
+        if sources_dir.exists():
+            for entry in sorted(sources_dir.iterdir()):
+                if entry.is_dir() and not entry.name.startswith("."):
+                    if entry.name not in groups:
+                        md_files = sorted(entry.rglob("*.md"))
+                        concept_files = [f for f in md_files if f.suffix == ".md"]
+                        if concept_files:
+                            groups[entry.name] = concept_files
+
+        return groups
+
+    groups_a = get_concept_groups(bundle_a)
+    groups_b = get_concept_groups(bundle_b)
+
+    print(f"Bundle A ({name_a}): {len(groups_a)} concept groups")
+    for g in sorted(groups_a.keys()):
+        print(f"  {g}/ — {len(groups_a[g])} file(s)")
+    print(f"\nBundle B ({name_b}): {len(groups_b)} concept groups")
+    for g in sorted(groups_b.keys()):
+        print(f"  {g}/ — {len(groups_b[g])} file(s)")
+
+    # Match groups
+    matches = _match_groups(list(groups_a.keys()), list(groups_b.keys()))
+
+    print(f"\nMatched {len(matches)} group pairs:")
+    for fa, fb, score in matches:
+        print(f"  {fa}/ ↔ {fb}/ (score: {score:.2f})")
+
+    if not matches:
+        print("\nNo matches found. Nothing to do.")
+        return
+
+    if dry_run:
+        print(f"\n{'='*50}")
+        print(f"DRY RUN — no files will be modified")
+        print(f"{'='*50}")
+        return
+
+    # Apply cross-links
+    changes_a: list[str] = []
+    changes_b: list[str] = []
+
+    for fa, fb, score in matches:
+        # Get title for the other bundle's concept
+        title_b = _folder_to_title(fb)
+        title_a = _folder_to_title(fa)
+
+        # Add related_concepts to bundle A's concept files pointing to bundle B
+        for cf in groups_a[fa]:
+            try:
+                content = cf.read_text(encoding="utf-8")
+            except Exception:
+                continue
+
+            # Add cross-link reference
+            ref = f"[[{name_b}/{title_b}]]"
+            new_content = _add_to_list_field(content, "related_concepts", ref)
+
+            if new_content != content:
+                cf.write_text(new_content, encoding="utf-8")
+                changes_a.append(f"  + {cf.relative_to(bundle_a.root)} → {ref}")
+
+        # Add related_concepts to bundle B's concept files pointing to bundle A
+        for cf in groups_b[fb]:
+            try:
+                content = cf.read_text(encoding="utf-8")
+            except Exception:
+                continue
+
+            ref = f"[[{name_a}/{title_a}]]"
+            new_content = _add_to_list_field(content, "related_concepts", ref)
+
+            if new_content != content:
+                cf.write_text(new_content, encoding="utf-8")
+                changes_b.append(f"  + {cf.relative_to(bundle_b.root)} → {ref}")
+
+    # Generate references/ files documenting the cross-links
+    now = datetime.now(timezone.utc)
+    date_str = now.strftime("%Y-%m-%d")
+
+    def write_reference_file(bundle: Bundle, other_name: str, changes: list[str]) -> None:
+        """Write a cross-link reference file."""
+        refs_dir = bundle.ensure_dir("references")
+        ref_path = refs_dir / f"cross-links-{other_name}.md"
+
+        lines = [
+            "---",
+            f'type: Reference',
+            f'title: "Cross-Links: {bundle.root.name} ↔ {other_name}"',
+            f'description: "Auto-generated cross-links between {bundle.root.name} and {other_name} knowledge bundles"',
+            f'tags: [cross-links, {bundle.root.name}, {other_name}]',
+            f'generated:',
+            f'  by: okf-crosslink/1.0',
+            f'  at: {now.isoformat()}',
+            f'status: draft',
+            "---",
+            f"",
+            f"# Cross-Links: {bundle.root.name} ↔ {other_name}",
+            f"",
+            f"_Generated on {date_str}_",
+            f"",
+            f"## Summary",
+            f"",
+            f"Cross-links between **{bundle.root.name}** and **{other_name}**.",
+            f"{len(changes)} concept file(s) updated.",
+            f"",
+            f"## Linked Groups",
+            f"",
+        ]
+
+        for fa, fb, score in matches:
+            title_a_local = _folder_to_title(fa)
+            title_b_local = _folder_to_title(fb)
+            lines.append(f"- **{fa}/** ↔ **{fb}/** (similarity: {score:.0%})")
+            lines.append(f"  - [[{bundle.root.name}/concepts/{fa}/index.md|{title_a_local}]]")
+            lines.append(f"  - [[{other_name}/concepts/{fb}/index.md|{title_b_local}]]")
+
+        lines.append("")
+        lines.append("## Changes Applied")
+        lines.append("")
+        if changes:
+            for c in changes:
+                lines.append(c)
+        else:
+            lines.append("No changes applied.")
+
+        lines.append("")
+
+        ref_path.write_text("\n".join(lines), encoding="utf-8")
+        print(f"  Reference file: {ref_path.relative_to(bundle.root)}")
+
+    print(f"\nApplying cross-links...")
+
+    write_reference_file(bundle_a, name_b, changes_a)
+    write_reference_file(bundle_b, name_a, changes_b)
+
+    print(f"\n{'='*50}")
+    print(f"Cross-linking complete!")
+    print(f"  {name_a}: {len(changes_a)} concept(s) updated")
+    print(f"  {name_b}: {len(changes_b)} concept(s) updated")
+    print(f"{'='*50}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Add cross-links between two OKF knowledge bundles"
+    )
+    parser.add_argument(
+        "bundle_a", type=Path,
+        help="Path to the first OKF knowledge bundle"
+    )
+    parser.add_argument(
+        "bundle_b", type=Path,
+        help="Path to the second OKF knowledge bundle"
+    )
+    parser.add_argument(
+        "--dry-run", "-n", action="store_true",
+        help="Preview matches without modifying files"
+    )
+    args = parser.parse_args()
+
+    bundle_a_path = args.bundle_a.resolve()
+    bundle_b_path = args.bundle_b.resolve()
+
+    if not bundle_a_path.exists():
+        print(f"Error: bundle path {bundle_a_path} does not exist")
+        sys.exit(1)
+    if not bundle_b_path.exists():
+        print(f"Error: bundle path {bundle_b_path} does not exist")
+        sys.exit(1)
+
+    bundle_a = open_bundle(bundle_a_path)
+    bundle_b = open_bundle(bundle_b_path)
+
+    crosslink_bundles(bundle_a, bundle_b, dry_run=args.dry_run)
+
+
+if __name__ == "__main__":
+    main()
